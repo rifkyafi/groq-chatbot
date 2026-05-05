@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# environment variables — JANGAN commit file ini!
+.env.local
+.env.example
+.env.*.local
+.env
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
