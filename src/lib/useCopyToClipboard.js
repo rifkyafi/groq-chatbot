@@ -1,23 +1,19 @@
 // src/lib/useCopyToClipboard.js
-// Fitur 1: Copy pesan ke clipboard
-// Cara kerja: navigator.clipboard.writeText() → simpan state "copied" selama 2 detik
+"use client";
 
 import { useState, useCallback } from "react";
 
 export function useCopyToClipboard() {
   const [copiedId, setCopiedId] = useState(null);
 
-  const copy = useCallback((text, id) => {
-    // navigator.clipboard hanya tersedia di HTTPS / localhost
-    if (!navigator?.clipboard) {
-      console.warn("Clipboard API tidak tersedia");
-      return;
+  const copy = useCallback(async (text, id) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
     }
-
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id);                          // tandai pesan mana yang di-copy
-      setTimeout(() => setCopiedId(null), 2000); // reset setelah 2 detik
-    });
   }, []);
 
   return { copiedId, copy };

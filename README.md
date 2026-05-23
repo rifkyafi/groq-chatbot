@@ -1,130 +1,309 @@
-# ◆ DeepSeek Chatbot — Next.js Template
+# 🚀 GroqChat - Setup Guide
 
-Template chatbot modern menggunakan Next.js 14 + DeepSeek API dengan fitur streaming.
+## Prerequisites
 
----
+- Node.js 18+ (https://nodejs.org)
+- MySQL 8.0+ (atau Docker)
+- Git
 
-## 🚀 Instalasi & Setup
+## 📁 Struktur Folder
 
-### 1. Clone / Salin Proyek
-
-```bash
-# Jika dari Git
-git clone <repo-url>
-cd deepseek-chatbot
-
-# Atau buat folder baru dan salin semua file
+```
+groqchat/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/[...nextauth]/
+│   │   │   │   └── route.js
+│   │   │   ├── register/
+│   │   │   │   └── route.js
+│   │   │   └── chat/
+│   │   │       └── route.js
+│   │   ├── login/
+│   │   │   └── page.jsx
+│   │   ├── register/
+│   │   │   └── page.jsx
+│   │   ├── ChatApp.jsx
+│   │   ├── SystemPromptModal.jsx
+│   │   ├── LogoutButton.jsx
+│   │   ├── Providers.jsx
+│   │   ├── layout.jsx
+│   │   ├── page.jsx
+│   │   ├── globals.css
+│   │   └── page.module.css
+│   ├── lib/
+│   │   ├── prisma.js
+│   │   ├── getInitials.js
+│   │   ├── useCopyToClipboard.js
+│   │   └── useExportChat.js
+│   ├── auth.js
+│   └── middleware.js
+├── prisma/
+│   └── schema.prisma
+├── .env.example
+├── .env.local (create manually)
+├── .gitignore
+├── next.config.js
+├── tailwind.config.js
+├── package.json
+└── tsconfig.json
 ```
 
-### 2. Install Dependencies
+## 1️⃣ Setup Database MySQL
+
+### Option A: Menggunakan Docker (Recommended)
+
+```bash
+# Jalankan MySQL container
+docker run --name groqchat-mysql \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -e MYSQL_DATABASE=groqchat \
+  -e MYSQL_USER=groqchat_user \
+  -e MYSQL_PASSWORD=strongpassword123 \
+  -p 3306:3306 \
+  -d mysql:8.0
+
+# Tunggu 15 detik sampai MySQL fully started
+sleep 15
+```
+
+### Option B: Instalasi Manual MySQL
+
+```bash
+# Windows - pastikan MySQL service jalan
+net start MySQL80
+
+# Buat database dan user
+mysql -u root -p
+```
+
+```sql
+CREATE DATABASE groqchat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'groqchat_user'@'localhost' IDENTIFIED BY 'strongpassword123';
+GRANT ALL PRIVILEGES ON groqchat.* TO 'groqchat_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+## 2️⃣ Setup Aplikasi
+
+### Step 1: Clone/Setup Project
+
+```bash
+# Navigate ke folder project
+cd groqchat
+
+# Copy file struktur dari outputs ke project Anda
+```
+
+### Step 2: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Setup API Key DeepSeek
+### Step 3: Setup Environment Variables
 
-Buat file `.env.local` di root folder proyek:
-
-```bash
-# Copy dari template
-cp .env.example .env.local
-```
-
-Lalu buka `.env.local` dan isi API key Anda:
+Buat file `.env.local` di root project:
 
 ```env
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-DEEPSEEK_MODEL=deepseek-chat
+# Groq API
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# NextAuth Secret (generate dengan command di bawah)
+AUTH_SECRET=your-random-32-char-secret
+
+# MySQL Connection
+DATABASE_URL="mysql://groqchat_user:strongpassword123@localhost:3306/groqchat"
 ```
 
-> **Cara mendapatkan API Key:**
-> 1. Buka https://platform.deepseek.com
-> 2. Daftar / login
-> 3. Buka menu **API Keys**
-> 4. Klik **Create new secret key**
-> 5. Salin key dan paste ke `.env.local`
+**Generate AUTH_SECRET:**
 
-### 4. Jalankan Development Server
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Copy hasilnya ke `.env.local`
+
+### Step 4: Setup Database Schema
+
+```bash
+# Push Prisma schema ke MySQL
+npx prisma db push
+
+# atau gunakan migration
+npx prisma migrate dev --name init
+```
+
+Output yang diharapkan:
+```
+✔ Your database has been created at mysql://groqchat_user:***@localhost:3306/groqchat
+✔ Prisma schema has been successfully applied to your database
+```
+
+### Step 5: Verifikasi Database
+
+```bash
+# Buka Prisma Studio (UI untuk manage database)
+npx prisma studio
+```
+
+Akses http://localhost:5555 untuk melihat database UI
+
+## 3️⃣ Jalankan Aplikasi
+
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-Buka browser ke: **http://localhost:3000**
+Akses http://localhost:3000
 
----
+### Production Mode
 
-## 📁 Struktur Proyek
-
-```
-deepseek-chatbot/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   └── chat/
-│   │   │       └── route.js      ← API endpoint (server-side)
-│   │   ├── globals.css           ← Style global
-│   │   ├── layout.jsx            ← Root layout
-│   │   ├── page.jsx              ← Halaman chat utama
-│   │   └── page.module.css       ← CSS module untuk halaman
-│   └── lib/
-│       └── deepseek.js           ← DeepSeek client
-├── .env.local                    ← API key (JANGAN di-commit!)
-├── .env.example                  ← Template env
-├── next.config.js
-└── package.json
+```bash
+npm run build
+npm start
 ```
 
----
+## 4️⃣ Test Aplikasi
 
-## 🛠️ Perintah
+1. **Buat Akun:**
+   - Klik "Daftar di sini"
+   - Isi nama, email, password
+   - Klik "Daftar"
 
-| Perintah        | Keterangan                          |
-|-----------------|-------------------------------------|
-| `npm run dev`   | Jalankan development server         |
-| `npm run build` | Build untuk production              |
-| `npm start`     | Jalankan production server          |
+2. **Login:**
+   - Email: (akun yang baru dibuat)
+   - Password: (password yang didaftarkan)
+   - Klik "Masuk"
 
----
+3. **Test Chat:**
+   - Ketik pertanyaan
+   - Tekan Enter atau klik tombol kirim
+   - Tunggu respons dari Groq API
 
-## ✨ Fitur
+4. **Test Fitur:**
+   - Klik system prompt untuk customize
+   - Export chat ke berbagai format
+   - Copy pesan ke clipboard
+   - Logout
 
-- ✅ Streaming response (teks muncul bertahap)
-- ✅ Riwayat percakapan (multi-turn)
-- ✅ Kirim dengan Enter, baris baru dengan Shift+Enter
-- ✅ Indikator loading & typing
-- ✅ Pesan error yang informatif
-- ✅ Tombol clear chat
-- ✅ Suggestion prompts
-- ✅ Responsive (mobile-friendly)
+## 🔑 Mendapatkan GROQ_API_KEY
 
----
+1. Buka https://console.groq.com
+2. Login atau buat akun
+3. Navigasi ke "API Keys"
+4. Generate new API key
+5. Copy key dan paste ke `.env.local`
 
-## 🔧 Kustomisasi
+## 🐛 Troubleshooting
 
-### Ganti System Prompt
-Edit bagian `SYSTEM_PROMPT` di `src/app/page.jsx`:
+### Error: "Can't reach database server"
 
-```js
-const SYSTEM_PROMPT = {
-  role: "system",
-  content: "Kamu adalah... (isi sesuai kebutuhan)",
-};
+```bash
+# Pastikan MySQL service jalan
+# Windows:
+net start MySQL80
+
+# Linux:
+sudo systemctl start mysql
+
+# Docker:
+docker start groqchat-mysql
 ```
 
-### Ganti Model
-Di `.env.local`:
+### Error: "mysql: command not found"
+
+Tidak perlu install mysql CLI untuk dev. Gunakan Prisma Studio:
+```bash
+npx prisma studio
+```
+
+### Error: "GROQ_API_KEY not found"
+
+Pastikan `.env.local` berisi:
 ```env
-DEEPSEEK_MODEL=deepseek-reasoner   # untuk model reasoning
+GROQ_API_KEY=gsk_xxxxxxxxxxxx
 ```
 
-### Ganti Temperatur / Max Tokens
-Di `src/app/api/chat/route.js`:
-```js
-const completion = await deepseek.chat.completions.create({
-  temperature: 0.7,   // 0 = deterministik, 1 = kreatif
-  max_tokens: 2048,
-  ...
-});
+### Error: "NextAuth secret not set"
+
+Generate secret:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+Paste ke `.env.local`:
+```env
+AUTH_SECRET=<paste_hasil_di_sini>
+```
+
+## 📊 Database Management
+
+```bash
+# View database (UI)
+npx prisma studio
+
+# Push schema changes
+npx prisma db push
+
+# Create migration
+npx prisma migrate dev --name <description>
+
+# Reset database (WARNING: hapus semua data)
+npx prisma migrate reset
+```
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Push ke GitHub
+git push origin main
+
+# Connect di Vercel dashboard
+# Set environment variables di Vercel
+# Deploy
+```
+
+### Railway
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Deploy
+railway up
+```
+
+### Self-Hosted (VPS)
+
+```bash
+# Build production
+npm run build
+
+# Start dengan PM2
+npm install -g pm2
+pm2 start "npm start" --name "groqchat"
+```
+
+## 📝 Notes
+
+- Chat history disimpan di localStorage (client-side)
+- User account disimpan di MySQL (server-side)
+- API key Groq hanya digunakan di server
+- Password di-hash dengan bcryptjs sebelum disimpan
+
+## 💬 Support
+
+Untuk pertanyaan atau issue:
+- Check documentation: https://docs.anthropic.com
+- Check Groq docs: https://console.groq.com/docs
+- Check Next.js docs: https://nextjs.org/docs

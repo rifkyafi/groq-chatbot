@@ -1,75 +1,97 @@
-import OpenAI from "openai";
+// src/app/api/chat/route.js
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import Groq from "openai";
 
-export async function POST(request) {
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
+});
+
+export async function POST(req) {
   try {
-    const { messages } = await request.json();
+    // Cek autentikasi
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!messages || !Array.isArray(messages)) {
-      return Response.json(
-        { error: "Format messages tidak valid." },
+    const { messages } = await req.json();
+
+    // Validasi messages
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid messages format" },
         { status: 400 }
       );
     }
 
-    const apiKey = process.env.GROQ_API_KEY;
-
-    if (!apiKey) {
-      return Response.json(
-        { error: "GROQ_API_KEY belum dikonfigurasi di .env.local" },
+    // Validasi API key
+    if (!process.env.GROQ_API_KEY) {
+      console.error("GROQ_API_KEY not set");
+      return NextResponse.json(
+        { error: "API key not configured" },
         { status: 500 }
       );
     }
 
-    const groq = new OpenAI({
-      apiKey: apiKey,
-      baseURL: "https://api.groq.com/openai/v1",
-    });
-
-    const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-
-    const completion = await groq.chat.completions.create({
-      model,
-      messages,
+    // Create streaming response
+    const stream = await groq.chat.completions.create({
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+      messages: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
       temperature: 0.7,
       max_tokens: 2048,
       stream: true,
     });
 
+    // Stream response ke client
     const encoder = new TextEncoder();
-    const stream = new ReadableStream({
+    const customReadable = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || "";
-            if (content) {
-              // Kirim sebagai raw text, bukan SSE format
-              controller.enqueue(encoder.encode(content));
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content || "";
+            if (delta) {
+              controller.enqueue(encoder.encode(delta));
             }
           }
           controller.close();
-        } catch (err) {
-          controller.error(err);
+        } catch (error) {
+          console.error("Stream error:", error);
+          controller.error(error);
         }
       },
     });
 
-    return new Response(stream, {
+    return new NextResponse(customReadable, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
-        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {
-    console.error("Groq API Error:", error);
+    console.error("Chat API error:", error);
 
-    const message =
-      error?.status === 401
-        ? "API key tidak valid. Periksa GROQ_API_KEY di .env.local"
-        : error?.status === 429
-        ? "Rate limit tercapai. Tunggu sebentar lalu coba lagi."
-        : error?.message || "Terjadi kesalahan pada server.";
+    if (error.status === 429) {
+      return NextResponse.json(
+        { error: "Rate limit tercapai. Tunggu sebentar lalu coba lagi." },
+        { status: 429 }
+      );
+    }
 
-    return Response.json({ error: message }, { status: error?.status || 500 });
+    if (error.status === 401) {
+      return NextResponse.json(
+        { error: "API key tidak valid atau sudah expired." },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: error.message || "Terjadi kesalahan server." },
+      { status: 500 }
+    );
   }
 }

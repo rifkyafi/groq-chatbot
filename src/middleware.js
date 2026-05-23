@@ -1,22 +1,46 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+// src/middleware.js
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname.startsWith("/login");
-  const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
+export const { auth } = NextAuth(authConfig);
 
-  if (isLoginPage || isApiAuth) return NextResponse.next();
+export default auth((request) => {
+  const session = request.auth;
 
-  if (!isLoggedIn) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+  // Public routes yang tidak perlu autentikasi
+  const publicRoutes = ["/login", "/register"];
+  const isPublicRoute = publicRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  // API routes autentikasi publik
+  const isAuthApiRoute = request.nextUrl.pathname.startsWith("/api/auth");
+
+  if (isPublicRoute || isAuthApiRoute) {
+    // Jika sudah login dan akses /login, redirect ke /
+    if (session && request.nextUrl.pathname.startsWith("/login")) {
+      return Response.redirect(new URL("/", request.url));
+    }
+    return null;
   }
 
-  return NextResponse.next();
+  // Routes yang memerlukan autentikasi
+  if (!session) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return Response.redirect(loginUrl);
+  }
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };
