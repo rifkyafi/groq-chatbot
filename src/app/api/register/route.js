@@ -11,7 +11,7 @@ export async function POST(req) {
     if (!name || !email || !password || !confirmPassword) {
       return NextResponse.json(
         { error: "Semua field harus diisi." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -20,7 +20,7 @@ export async function POST(req) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Format email tidak valid." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(req) {
     if (name.trim().length < 2) {
       return NextResponse.json(
         { error: "Nama minimal 2 karakter." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function POST(req) {
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Password minimal 8 karakter." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,31 +44,31 @@ export async function POST(req) {
     if (password !== confirmPassword) {
       return NextResponse.json(
         { error: "Konfirmasi password tidak cocok." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Cek email sudah terdaftar
     const [existingRows] = await pool.execute(
-      'SELECT id FROM users WHERE email = ?',
-      [email.toLowerCase()]
+      "SELECT id FROM users WHERE email = ?",
+      [email.toLowerCase()],
     );
     const existingUser = existingRows[0];
 
     if (existingUser) {
       return NextResponse.json(
         { error: "Email sudah terdaftar." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     // Hash password
     const hashedPassword = await bcryptjs.hash(password, 12);
 
-    // Create user
+    // Create user (set timestamps explicitly to avoid missing-default errors)
     const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name.trim(), email.toLowerCase(), hashedPassword]
+      "INSERT INTO users (name, email, password, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())",
+      [name.trim(), email.toLowerCase(), hashedPassword],
     );
 
     return NextResponse.json(
@@ -80,13 +80,13 @@ export async function POST(req) {
           email: email.toLowerCase(),
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json(
       { error: "Terjadi kesalahan server. Coba lagi nanti." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -6,24 +6,32 @@ import { useRouter } from "next/navigation";
 
 // ── Fitur baru ──
 import { useCopyToClipboard } from "@/lib/useCopyToClipboard";
-import { useExportChat }      from "@/lib/useExportChat";
-import SystemPromptModal      from "./SystemPromptModal";
+import { useExportChat } from "@/lib/useExportChat";
+import SystemPromptModal from "./SystemPromptModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
 function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 function formatDate(ts) {
-  const d = new Date(ts); d.setHours(0,0,0,0);
-  const now = new Date(); now.setHours(0,0,0,0);
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const diff = now - d;
   if (diff === 0) return "Hari ini";
   if (diff <= 86400000) return "Kemarin";
   if (diff <= 7 * 86400000) return "Minggu ini";
-  return new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  return new Date(ts).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -40,8 +48,11 @@ function TypingDot() {
   return (
     <span className="inline-flex gap-1 items-center py-1">
       {[0, 1, 2].map((i) => (
-        <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-blink"
-          style={{ animationDelay: `${i * 0.15}s` }} />
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-blink"
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
       ))}
     </span>
   );
@@ -53,8 +64,8 @@ function ExportMenu({ onExport }) {
 
   const formats = [
     { id: "markdown", label: "📝 Markdown (.md)", desc: "Notion, Obsidian" },
-    { id: "txt",      label: "📄 Plain Text (.txt)", desc: "Paling universal" },
-    { id: "json",     label: "🗂️ JSON (.json)", desc: "Backup / developer" },
+    { id: "txt", label: "📄 Plain Text (.txt)", desc: "Paling universal" },
+    { id: "json", label: "🗂️ JSON (.json)", desc: "Backup / developer" },
   ];
 
   return (
@@ -77,7 +88,10 @@ function ExportMenu({ onExport }) {
             {formats.map((f) => (
               <button
                 key={f.id}
-                onClick={() => { onExport(f.id); setOpen(false); }}
+                onClick={() => {
+                  onExport(f.id);
+                  setOpen(false);
+                }}
                 className="w-full flex flex-col px-3 py-2 text-left hover:bg-[#1e1e22] transition-colors border-none bg-transparent cursor-pointer"
               >
                 <span className="text-[12px] text-[#e8e8f0]">{f.label}</span>
@@ -101,56 +115,78 @@ export default function ChatApp() {
   }, [status, router]);
 
   // ── State utama ──
-  const [chats, setChats]               = useState([]);
-  const [hydrated, setHydrated]         = useState(false);
+  const [chats, setChats] = useState([]);
+  const [hydrated, setHydrated] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
-  const [input, setInput]               = useState("");
-  const [isLoading, setIsLoading]       = useState(false);
-  const [sidebarOpen, setSidebarOpen]   = useState(true);
-  const [editingId, setEditingId]       = useState(null);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [hoveredChat, setHoveredChat]   = useState(null);
+  const [hoveredChat, setHoveredChat] = useState(null);
 
   // ── State fitur baru ──
-  const [systemPrompt, setSystemPrompt]         = useState(
-    "Kamu adalah asisten AI yang ramah dan membantu."
+  const [systemPrompt, setSystemPrompt] = useState(
+    "Kamu adalah asisten AI yang ramah dan membantu.",
   );
-  const [showSystemModal, setShowSystemModal]   = useState(false);
-  const [showSystemBadge, setShowSystemBadge]   = useState(false);
+  const [showSystemModal, setShowSystemModal] = useState(false);
+  const [showSystemBadge, setShowSystemBadge] = useState(false);
 
-  const [suggestions, setSuggestions]           = useState([
-    { p: "🤖 AI & Teknologi",     s: "Apa dampak Gemini AI terhadap dunia kerja di Indonesia?" },
-    { p: "💰 Ekonomi & Investasi", s: "Apa itu Danantara dan bagaimana pengaruhnya ke ekonomi?" },
-    { p: "⚽ Timnas Indonesia",    s: "Seberapa jauh peluang Timnas Indonesia di kualifikasi Piala Dunia?" },
-    { p: "📱 Media Sosial",        s: "Mengapa konten hiburan dan kuliner paling viral di Indonesia?" },
+  const [suggestions, setSuggestions] = useState([
+    {
+      p: "🤖 AI & Teknologi",
+      s: "Apa dampak Gemini AI terhadap dunia kerja di Indonesia?",
+    },
+    {
+      p: "💰 Ekonomi & Investasi",
+      s: "Apa itu Danantara dan bagaimana pengaruhnya ke ekonomi?",
+    },
+    {
+      p: "⚽ Timnas Indonesia",
+      s: "Seberapa jauh peluang Timnas Indonesia di kualifikasi Piala Dunia?",
+    },
+    {
+      p: "📱 Media Sosial",
+      s: "Mengapa konten hiburan dan kuliner paling viral di Indonesia?",
+    },
   ]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
   // ── Custom hooks ──
-  const { copiedId, copy }  = useCopyToClipboard();
-  const { exportChat }      = useExportChat();
+  const { copiedId, copy } = useCopyToClipboard();
+  const { exportChat } = useExportChat();
 
   // ── Refs ──
   const messagesEndRef = useRef(null);
-  const inputRef       = useRef(null);
-  const editInputRef   = useRef(null);
+  const inputRef = useRef(null);
+  const editInputRef = useRef(null);
 
   const activeChat = chats.find((c) => c.id === activeChatId) ?? null;
 
-  // ── Persist ke localStorage ──
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem("chats", JSON.stringify(chats));
-  }, [chats, hydrated]);
+  // ── Persist ke localStorage per-user (namespace by email) ──
+  const storageKey = session?.user?.email
+    ? `chats:${session.user.email}`
+    : null;
 
   useEffect(() => {
+    if (!hydrated || !storageKey) return;
     try {
-      const saved = localStorage.getItem("chats");
-      if (saved) setChats(JSON.parse(saved));
+      localStorage.setItem(storageKey, JSON.stringify(chats));
+    } catch (_) {}
+  }, [chats, hydrated, storageKey]);
+
+  useEffect(() => {
+    // Load chats for the current logged-in user only. Do NOT fall back to global key to avoid cross-account leakage.
+    try {
+      if (storageKey) {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) setChats(JSON.parse(saved));
+        else setChats([]);
+      }
     } catch (_) {}
     setHydrated(true);
-  }, []);
+  }, [storageKey]);
 
   // Persist system prompt terpisah
   useEffect(() => {
@@ -179,7 +215,10 @@ export default function ChatApp() {
     async function fetchSuggestions() {
       try {
         const cached = localStorage.getItem("suggestions");
-        if (cached) { setSuggestions(JSON.parse(cached)); setLoadingSuggestions(false); }
+        if (cached) {
+          setSuggestions(JSON.parse(cached));
+          setLoadingSuggestions(false);
+        }
       } catch (_) {}
       setLoadingSuggestions(true);
       try {
@@ -187,16 +226,18 @@ export default function ChatApp() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: [{
-              role: "user",
-              content: `Berikan 4 topik pertanyaan yang sedang ramai dibahas di Indonesia sekarang. Format respons HANYA JSON array murni:
+            messages: [
+              {
+                role: "user",
+                content: `Berikan 4 topik pertanyaan yang sedang ramai dibahas di Indonesia sekarang. Format respons HANYA JSON array murni:
 [
   {"emoji": "emoji relevan", "kategori": "2-3 kata kategori", "pertanyaan": "pertanyaan menarik bahasa Indonesia, max 10 kata"},
   {"emoji": "...", "kategori": "...", "pertanyaan": "..."},
   {"emoji": "...", "kategori": "...", "pertanyaan": "..."},
   {"emoji": "...", "kategori": "...", "pertanyaan": "..."}
 ]`,
-            }],
+              },
+            ],
           }),
         });
         const reader = res.body.getReader();
@@ -215,10 +256,14 @@ export default function ChatApp() {
             s: item.pertanyaan,
           }));
           setSuggestions(next);
-          try { localStorage.setItem("suggestions", JSON.stringify(next)); } catch (_) {}
+          try {
+            localStorage.setItem("suggestions", JSON.stringify(next));
+          } catch (_) {}
         }
-      } catch (_) {}
-      finally { setLoadingSuggestions(false); }
+      } catch (_) {
+      } finally {
+        setLoadingSuggestions(false);
+      }
     }
     fetchSuggestions();
   }, []);
@@ -226,10 +271,16 @@ export default function ChatApp() {
   // ── Chat CRUD ──
   function createNewChat() {
     const id = generateId();
-    setChats((prev) => [{
-      id, title: "Chat Baru", messages: [],
-      createdAt: Date.now(), updatedAt: Date.now(),
-    }, ...prev]);
+    setChats((prev) => [
+      {
+        id,
+        title: "Chat Baru",
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      ...prev,
+    ]);
     setActiveChatId(id);
     setInput("");
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -241,10 +292,17 @@ export default function ChatApp() {
       setActiveChatId(chats.filter((c) => c.id !== id)[0]?.id ?? null);
   }
 
-  function startRename(chat)  { setEditingId(chat.id); setEditingTitle(chat.title); }
+  function startRename(chat) {
+    setEditingId(chat.id);
+    setEditingTitle(chat.title);
+  }
   function commitRename(id) {
     if (editingTitle.trim())
-      setChats((prev) => prev.map((c) => c.id === id ? { ...c, title: editingTitle.trim() } : c));
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, title: editingTitle.trim() } : c,
+        ),
+      );
     setEditingId(null);
   }
 
@@ -253,23 +311,36 @@ export default function ChatApp() {
   function startChatWithSuggestion(text) {
     if (isLoading) return;
 
-    const chatId        = generateId();
-    const userMsgId     = generateId();
+    const chatId = generateId();
+    const userMsgId = generateId();
     const assistantMsgId = generateId();
 
-    const userMsg = { id: userMsgId, role: "user", content: text, ts: Date.now() };
+    const userMsg = {
+      id: userMsgId,
+      role: "user",
+      content: text,
+      ts: Date.now(),
+    };
 
     // Buat chat baru + user message + placeholder AI dalam satu setState
-    setChats((prev) => [{
-      id: chatId,
-      title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
-      messages: [
-        userMsg,
-        { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() },
-      ],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    }, ...prev]);
+    setChats((prev) => [
+      {
+        id: chatId,
+        title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
+        messages: [
+          userMsg,
+          {
+            id: assistantMsgId,
+            role: "assistant",
+            content: "",
+            ts: Date.now(),
+          },
+        ],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      ...prev,
+    ]);
 
     setActiveChatId(chatId);
     setInput("");
@@ -291,12 +362,15 @@ export default function ChatApp() {
 
         if (!res.ok) {
           let errMsg = `HTTP ${res.status}`;
-          try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+          try {
+            const e = await res.json();
+            errMsg = e.error ?? errMsg;
+          } catch (_) {}
           throw new Error(errMsg);
         }
 
-        const reader    = res.body.getReader();
-        const decoder   = new TextDecoder();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
         let accumulated = "";
 
         while (true) {
@@ -304,25 +378,37 @@ export default function ChatApp() {
           if (done) break;
           accumulated += decoder.decode(value, { stream: true });
 
-          setChats((prev) => prev.map((c) =>
-            c.id !== chatId ? c : {
-              ...c,
-              messages: c.messages.map((m) =>
-                m.id !== assistantMsgId ? m : { ...m, content: accumulated }
-              ),
-              updatedAt: Date.now(),
-            }
-          ));
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id !== chatId
+                ? c
+                : {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id !== assistantMsgId
+                        ? m
+                        : { ...m, content: accumulated },
+                    ),
+                    updatedAt: Date.now(),
+                  },
+            ),
+          );
         }
       } catch (err) {
-        setChats((prev) => prev.map((c) =>
-          c.id !== chatId ? c : {
-            ...c,
-            messages: c.messages.map((m) =>
-              m.id !== assistantMsgId ? m : { ...m, content: `⚠️ Error: ${err.message}` }
-            ),
-          }
-        ));
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id !== chatId
+              ? c
+              : {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id !== assistantMsgId
+                      ? m
+                      : { ...m, content: `⚠️ Error: ${err.message}` },
+                  ),
+                },
+          ),
+        );
       } finally {
         setIsLoading(false);
         setTimeout(() => inputRef.current?.focus(), 100);
@@ -338,13 +424,16 @@ export default function ChatApp() {
     let chatId = activeChatId;
     if (!chatId) {
       chatId = generateId();
-      setChats((prev) => [{
-        id: chatId,
-        title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
-        messages: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      }, ...prev]);
+      setChats((prev) => [
+        {
+          id: chatId,
+          title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+        ...prev,
+      ]);
       setActiveChatId(chatId);
     }
 
@@ -354,34 +443,58 @@ export default function ChatApp() {
 
     if (overrideMessages) {
       historyForAPI = overrideMessages;
-      setChats((prev) => prev.map((c) => {
-        if (c.id !== chatId) return c;
-        return {
-          ...c,
-          messages: [...c.messages, { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() }],
-          updatedAt: Date.now(),
-        };
-      }));
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id !== chatId) return c;
+          return {
+            ...c,
+            messages: [
+              ...c.messages,
+              {
+                id: assistantMsgId,
+                role: "assistant",
+                content: "",
+                ts: Date.now(),
+              },
+            ],
+            updatedAt: Date.now(),
+          };
+        }),
+      );
     } else {
-      const userMsg = { id: generateId(), role: "user", content: text, ts: Date.now() };
-      const existingMessages = chats.find((c) => c.id === chatId)?.messages ?? [];
+      const userMsg = {
+        id: generateId(),
+        role: "user",
+        content: text,
+        ts: Date.now(),
+      };
+      const existingMessages =
+        chats.find((c) => c.id === chatId)?.messages ?? [];
       historyForAPI = [...existingMessages, userMsg];
 
-      setChats((prev) => prev.map((c) => {
-        if (c.id !== chatId) return c;
-        return {
-          ...c,
-          title: c.messages.length === 0
-            ? text.slice(0, 40) + (text.length > 40 ? "…" : "")
-            : c.title,
-          messages: [
-            ...c.messages,
-            userMsg,
-            { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() },
-          ],
-          updatedAt: Date.now(),
-        };
-      }));
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id !== chatId) return c;
+          return {
+            ...c,
+            title:
+              c.messages.length === 0
+                ? text.slice(0, 40) + (text.length > 40 ? "…" : "")
+                : c.title,
+            messages: [
+              ...c.messages,
+              userMsg,
+              {
+                id: assistantMsgId,
+                role: "assistant",
+                content: "",
+                ts: Date.now(),
+              },
+            ],
+            updatedAt: Date.now(),
+          };
+        }),
+      );
       setInput("");
     }
 
@@ -401,7 +514,10 @@ export default function ChatApp() {
 
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`;
-        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+        try {
+          const e = await res.json();
+          errMsg = e.error ?? errMsg;
+        } catch (_) {}
         throw new Error(errMsg);
       }
 
@@ -413,25 +529,37 @@ export default function ChatApp() {
         const { done, value } = await reader.read();
         if (done) break;
         accumulated += decoder.decode(value, { stream: true });
-        setChats((prev) => prev.map((c) =>
-          c.id !== chatId ? c : {
-            ...c,
-            messages: c.messages.map((m) =>
-              m.id !== assistantMsgId ? m : { ...m, content: accumulated }
-            ),
-            updatedAt: Date.now(),
-          }
-        ));
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id !== chatId
+              ? c
+              : {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id !== assistantMsgId
+                      ? m
+                      : { ...m, content: accumulated },
+                  ),
+                  updatedAt: Date.now(),
+                },
+          ),
+        );
       }
     } catch (err) {
-      setChats((prev) => prev.map((c) =>
-        c.id !== chatId ? c : {
-          ...c,
-          messages: c.messages.map((m) =>
-            m.id !== assistantMsgId ? m : { ...m, content: `⚠️ Error: ${err.message}` }
-          ),
-        }
-      ));
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id !== chatId
+            ? c
+            : {
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id !== assistantMsgId
+                    ? m
+                    : { ...m, content: `⚠️ Error: ${err.message}` },
+                ),
+              },
+        ),
+      );
     } finally {
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -445,15 +573,20 @@ export default function ChatApp() {
     const msgs = activeChat.messages;
     let lastAiIdx = -1;
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].role === "assistant") { lastAiIdx = i; break; }
+      if (msgs[i].role === "assistant") {
+        lastAiIdx = i;
+        break;
+      }
     }
     if (lastAiIdx === -1) return;
 
     const messagesWithoutLastAI = msgs.slice(0, lastAiIdx);
 
-    setChats((prev) => prev.map((c) =>
-      c.id !== activeChatId ? c : { ...c, messages: messagesWithoutLastAI }
-    ));
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id !== activeChatId ? c : { ...c, messages: messagesWithoutLastAI },
+      ),
+    );
 
     sendMessage(messagesWithoutLastAI);
   }
@@ -531,8 +664,10 @@ export default function ChatApp() {
         .thin-scroll::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 2px; }
       `}</style>
 
-      <div className="flex h-screen overflow-hidden bg-[#0f0f11] text-[#e8e8f0]" suppressHydrationWarning>
-
+      <div
+        className="flex h-screen overflow-hidden bg-[#0f0f11] text-[#e8e8f0]"
+        suppressHydrationWarning
+      >
         {/* ══════════ SIDEBAR ══════════ */}
         <aside
           className="flex flex-col flex-shrink-0 bg-[#17171a] border-r border-[#2a2a30] overflow-hidden transition-all duration-[250ms]"
@@ -561,7 +696,8 @@ export default function ChatApp() {
             >
               <span>⚙️</span>
               <span className="flex-1 text-left truncate">System Prompt</span>
-              {systemPrompt !== "Kamu adalah asisten AI yang ramah dan membantu." && (
+              {systemPrompt !==
+                "Kamu adalah asisten AI yang ramah dan membantu." && (
                 <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
               )}
             </button>
@@ -581,7 +717,7 @@ export default function ChatApp() {
                   {label}
                 </div>
                 {items.map((chat) => {
-                  const isActive  = chat.id === activeChatId;
+                  const isActive = chat.id === activeChatId;
                   const isHovered = hoveredChat === chat.id;
                   return (
                     <div
@@ -591,11 +727,19 @@ export default function ChatApp() {
                       onMouseLeave={() => setHoveredChat(null)}
                       className="flex items-center gap-1.5 px-2.5 py-2 rounded-[9px] cursor-pointer transition-all relative"
                       style={{
-                        background: isActive ? "rgba(124,106,247,0.1)" : isHovered ? "#1e1e22" : "transparent",
-                        border:     isActive ? "1px solid rgba(124,106,247,0.2)" : "1px solid transparent",
+                        background: isActive
+                          ? "rgba(124,106,247,0.1)"
+                          : isHovered
+                            ? "#1e1e22"
+                            : "transparent",
+                        border: isActive
+                          ? "1px solid rgba(124,106,247,0.2)"
+                          : "1px solid transparent",
                       }}
                     >
-                      <span className="text-[13px] opacity-70 flex-shrink-0">💬</span>
+                      <span className="text-[13px] opacity-70 flex-shrink-0">
+                        💬
+                      </span>
 
                       {editingId === chat.id ? (
                         <input
@@ -604,7 +748,7 @@ export default function ChatApp() {
                           onChange={(e) => setEditingTitle(e.target.value)}
                           onBlur={() => commitRename(chat.id)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter")  commitRename(chat.id);
+                            if (e.key === "Enter") commitRename(chat.id);
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -620,17 +764,24 @@ export default function ChatApp() {
                       )}
 
                       {isHovered && (
-                        <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="flex items-center gap-0.5 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             title="Rename"
                             onClick={() => startRename(chat)}
                             className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-[#e8e8f0] hover:bg-[#2a2a30]"
-                          >✏️</button>
+                          >
+                            ✏️
+                          </button>
                           <button
                             title="Hapus"
                             onClick={() => deleteChat(chat.id)}
                             className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-red-400 hover:bg-red-400/10"
-                          >🗑️</button>
+                          >
+                            🗑️
+                          </button>
                         </div>
                       )}
                     </div>
@@ -643,7 +794,6 @@ export default function ChatApp() {
 
         {/* ══════════ MAIN ══════════ */}
         <main className="flex flex-col flex-1 overflow-hidden bg-[#0f0f11]">
-
           {/* Topbar */}
           <div className="h-[52px] flex items-center gap-3 px-[18px] border-b border-[#2a2a30] flex-shrink-0 bg-[#0f0f11]/80 backdrop-blur-[10px]">
             <button
@@ -656,20 +806,27 @@ export default function ChatApp() {
 
             <div
               className="flex-1 text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis"
-              style={{ color: !activeChat ? "#6b6b7d" : "#9595a8", fontStyle: !activeChat ? "italic" : "normal" }}
+              style={{
+                color: !activeChat ? "#6b6b7d" : "#9595a8",
+                fontStyle: !activeChat ? "italic" : "normal",
+              }}
             >
               {activeChat ? activeChat.title : "Pilih atau buat chat baru"}
             </div>
 
             {showSystemBadge && (
-              <span className="text-[10px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2.5 py-0.5 whitespace-nowrap"
-                style={{ animation: "slideIn 0.2s ease" }}>
+              <span
+                className="text-[10px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2.5 py-0.5 whitespace-nowrap"
+                style={{ animation: "slideIn 0.2s ease" }}
+              >
                 ✓ System prompt tersimpan
               </span>
             )}
 
             {activeChat && activeChat.messages.length > 0 && (
-              <ExportMenu onExport={(format) => exportChat(activeChat, format)} />
+              <ExportMenu
+                onExport={(format) => exportChat(activeChat, format)}
+              />
             )}
 
             <span className="font-mono text-[10px] text-[#6b6b7d] bg-[#1e1e22] border border-[#2a2a30] rounded px-2 py-0.5 whitespace-nowrap flex-shrink-0">
@@ -684,7 +841,8 @@ export default function ChatApp() {
               >
                 {session?.user?.image && (
                   <img
-                    src={session.user.image} alt={session.user.name}
+                    src={session.user.image}
+                    alt={session.user.name}
                     referrerPolicy="no-referrer"
                     className="w-[26px] h-[26px] rounded-full border border-[#2a2a30] object-cover"
                   />
@@ -692,29 +850,42 @@ export default function ChatApp() {
                 <span className="text-[13px] text-[#9595a8] whitespace-nowrap max-w-[80px] overflow-hidden text-ellipsis">
                   {session?.user?.name?.split(" ")[0]}
                 </span>
-                <span className="text-[10px] text-[#6b6b7d]">{showUserMenu ? "▴" : "▾"}</span>
+                <span className="text-[10px] text-[#6b6b7d]">
+                  {showUserMenu ? "▴" : "▾"}
+                </span>
               </button>
 
               {showUserMenu && (
                 <>
-                  <div className="fixed inset-0 z-[9]" onClick={() => setShowUserMenu(false)} />
+                  <div
+                    className="fixed inset-0 z-[9]"
+                    onClick={() => setShowUserMenu(false)}
+                  />
                   <div className="animate-dropIn absolute top-[calc(100%+8px)] right-0 w-60 bg-[#17171a] border border-[#2a2a30] rounded-xl overflow-hidden z-10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                     <div className="flex items-center gap-3 p-4">
                       {session?.user?.image && (
                         <img
-                          src={session.user.image} alt={session.user.name}
+                          src={session.user.image}
+                          alt={session.user.name}
                           referrerPolicy="no-referrer"
                           className="w-10 h-10 rounded-full border border-[#2a2a30] object-cover flex-shrink-0"
                         />
                       )}
                       <div>
-                        <div className="text-[13px] font-semibold text-[#e8e8f0]">{session?.user?.name}</div>
-                        <div className="text-[11px] text-[#6b6b7d] mt-0.5 break-all">{session?.user?.email}</div>
+                        <div className="text-[13px] font-semibold text-[#e8e8f0]">
+                          {session?.user?.name}
+                        </div>
+                        <div className="text-[11px] text-[#6b6b7d] mt-0.5 break-all">
+                          {session?.user?.email}
+                        </div>
                       </div>
                     </div>
                     <div className="h-px bg-[#2a2a30]" />
                     <button
-                      onClick={() => { setShowUserMenu(false); signOut({ callbackUrl: "/login" }); }}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        signOut({ callbackUrl: "/login" });
+                      }}
                       className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none text-[13px] text-[#9595a8] cursor-pointer text-left transition-all hover:bg-red-400/[0.08] hover:text-red-400"
                     >
                       <span>🚪</span> Keluar
@@ -729,9 +900,15 @@ export default function ChatApp() {
           <div className="flex-1 overflow-y-auto pt-6 pb-2 thin-scroll">
             {!activeChat ? (
               <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
-                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">🤖</div>
-                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">Halo! Apa yang bisa dibantu?</div>
-                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">Mulai percakapan baru atau pilih chat dari sidebar.</div>
+                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">
+                  🤖
+                </div>
+                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">
+                  Halo! Apa yang bisa dibantu?
+                </div>
+                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">
+                  Mulai percakapan baru atau pilih chat dari sidebar.
+                </div>
                 <div className="grid grid-cols-2 gap-2.5 max-w-[480px] w-full">
                   {loadingSuggestions
                     ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
@@ -744,30 +921,43 @@ export default function ChatApp() {
                           className="bg-[#17171a] border border-[#2a2a30] rounded-xl p-3 cursor-pointer text-left transition-all hover:border-violet-500 hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <p className="text-xs text-[#9595a8] m-0">{sg.p}</p>
-                          <span className="text-[11px] text-[#6b6b7d] mt-0.5 block">{sg.s}</span>
+                          <span className="text-[11px] text-[#6b6b7d] mt-0.5 block">
+                            {sg.s}
+                          </span>
                         </button>
                       ))}
                 </div>
               </div>
             ) : activeChat.messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
-                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">✨</div>
-                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">Chat baru siap!</div>
-                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">Tulis pesan pertamamu di bawah untuk memulai.</div>
+                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">
+                  ✨
+                </div>
+                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">
+                  Chat baru siap!
+                </div>
+                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">
+                  Tulis pesan pertamamu di bawah untuk memulai.
+                </div>
               </div>
             ) : (
               <>
                 {activeChat.messages.map((msg) => (
-                  <div key={msg.id} className="animate-msg-in max-w-[760px] mx-auto px-6 py-1.5 group">
+                  <div
+                    key={msg.id}
+                    className="animate-msg-in max-w-[760px] mx-auto px-6 py-1.5 group"
+                  >
                     <div className="flex gap-3 items-start">
                       {/* Avatar */}
                       <div
                         className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-sm flex-shrink-0 mt-0.5"
                         style={{
-                          background: msg.role === "user" ? "#1d1b3a" : "#1e1e22",
-                          border: msg.role === "user"
-                            ? "1px solid rgba(124,106,247,0.3)"
-                            : "1px solid #2a2a30",
+                          background:
+                            msg.role === "user" ? "#1d1b3a" : "#1e1e22",
+                          border:
+                            msg.role === "user"
+                              ? "1px solid rgba(124,106,247,0.3)"
+                              : "1px solid #2a2a30",
                         }}
                       >
                         {msg.role === "user" ? "👤" : "🤖"}
@@ -836,10 +1026,14 @@ export default function ChatApp() {
                 onChange={(e) => {
                   setInput(e.target.value);
                   e.target.style.height = "auto";
-                  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                  e.target.style.height =
+                    Math.min(e.target.scrollHeight, 160) + "px";
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
                 }}
                 className="flex-1 bg-transparent border-none outline-none text-[#e8e8f0] text-sm leading-relaxed resize-none min-h-[22px] max-h-[160px] py-0.5 placeholder-[#6b6b7d]"
               />
