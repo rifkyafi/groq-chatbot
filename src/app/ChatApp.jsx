@@ -4,67 +4,94 @@ import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+// ── Fitur baru ──
+import { useCopyToClipboard } from "@/lib/useCopyToClipboard";
+import { useExportChat }      from "@/lib/useExportChat";
+import SystemPromptModal      from "./SystemPromptModal";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
-
 function formatTime(ts) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
-
 function formatDate(ts) {
-  const d = new Date(ts);
-  const now = new Date();
+  const d = new Date(ts); d.setHours(0,0,0,0);
+  const now = new Date(); now.setHours(0,0,0,0);
   const diff = now - d;
-  if (diff < 86400000) return "Hari ini";
-  if (diff < 172800000) return "Kemarin";
-  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  if (diff === 0) return "Hari ini";
+  if (diff <= 86400000) return "Kemarin";
+  if (diff <= 7 * 86400000) return "Minggu ini";
+  return new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 }
 
-function SkeletonCard({ isDark }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function SkeletonCard() {
   return (
-    <div style={{
-      background: isDark ? "#17171a" : "#ffffff",
-      border: `1px solid ${isDark ? "#2a2a30" : "#e0e0e8"}`,
-      borderRadius: 12,
-      padding: 12,
-    }}>
-      <span style={{
-        display: "block", height: 11, borderRadius: 4, width: "55%", marginBottom: 8,
-        background: isDark
-          ? "linear-gradient(90deg,#2a2a30 0%,#1e1e22 50%,#2a2a30 100%)"
-          : "linear-gradient(90deg,#e0e0e8 0%,#f0f0f3 50%,#e0e0e8 100%)",
-        backgroundSize: "200% 100%",
-        animation: "shimmer 1.4s infinite linear",
-      }} />
-      <span style={{
-        display: "block", height: 11, borderRadius: 4, width: "85%",
-        background: isDark
-          ? "linear-gradient(90deg,#2a2a30 0%,#1e1e22 50%,#2a2a30 100%)"
-          : "linear-gradient(90deg,#e0e0e8 0%,#f0f0f3 50%,#e0e0e8 100%)",
-        backgroundSize: "200% 100%",
-        animation: "shimmer 1.4s infinite linear",
-      }} />
+    <div className="bg-[#17171a] border border-[#2a2a30] rounded-xl p-3">
+      <span className="block h-[11px] rounded w-[55%] mb-2 bg-gradient-to-r from-[#2a2a30] via-[#1e1e22] to-[#2a2a30] bg-[length:200%_100%] animate-shimmer" />
+      <span className="block h-[11px] rounded w-[85%] bg-gradient-to-r from-[#2a2a30] via-[#1e1e22] to-[#2a2a30] bg-[length:200%_100%] animate-shimmer" />
     </div>
   );
 }
 
-function TypingDot({ isDark }) {
+function TypingDot() {
   return (
-    <span style={{ display: "inline-flex", gap: 4, alignItems: "center", padding: "4px 0" }}>
+    <span className="inline-flex gap-1 items-center py-1">
       {[0, 1, 2].map((i) => (
-        <span key={i} style={{
-          width: 6, height: 6, borderRadius: "50%",
-          background: isDark ? "#8b5cf6" : "#6c5ce7",
-          animation: "blink 1s infinite",
-          animationDelay: `${i * 0.15}s`,
-        }} />
+        <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-blink"
+          style={{ animationDelay: `${i * 0.15}s` }} />
       ))}
     </span>
   );
 }
 
+// ─── Export dropdown ──────────────────────────────────────────────────────────
+function ExportMenu({ onExport }) {
+  const [open, setOpen] = useState(false);
+
+  const formats = [
+    { id: "markdown", label: "📝 Markdown (.md)", desc: "Notion, Obsidian" },
+    { id: "txt",      label: "📄 Plain Text (.txt)", desc: "Paling universal" },
+    { id: "json",     label: "🗂️ JSON (.json)", desc: "Backup / developer" },
+  ];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        title="Export chat"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] text-[#9595a8] border border-[#2a2a30] bg-[#1e1e22] hover:border-violet-500 hover:text-violet-400 transition-all"
+      >
+        ⬇️ Export
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[9]" onClick={() => setOpen(false)} />
+          <div className="absolute top-[calc(100%+6px)] right-0 w-52 bg-[#17171a] border border-[#2a2a30] rounded-xl z-10 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-dropIn">
+            <p className="text-[9px] font-semibold text-[#6b6b7d] uppercase tracking-widest px-3 pt-3 pb-1">
+              Pilih format
+            </p>
+            {formats.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => { onExport(f.id); setOpen(false); }}
+                className="w-full flex flex-col px-3 py-2 text-left hover:bg-[#1e1e22] transition-colors border-none bg-transparent cursor-pointer"
+              >
+                <span className="text-[12px] text-[#e8e8f0]">{f.label}</span>
+                <span className="text-[10px] text-[#6b6b7d]">{f.desc}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function ChatApp() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -73,90 +100,81 @@ export default function ChatApp() {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  const [chats, setChats] = useState([]);
-  const [hydrated, setHydrated] = useState(false);
+  // ── State utama ──
+  const [chats, setChats]               = useState([]);
+  const [hydrated, setHydrated]         = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [editingId, setEditingId] = useState(null);
+  const [input, setInput]               = useState("");
+  const [isLoading, setIsLoading]       = useState(false);
+  const [sidebarOpen, setSidebarOpen]   = useState(true);
+  const [editingId, setEditingId]       = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isDark, setIsDark] = useState(true); // ← theme state
-  const [suggestions, setSuggestions] = useState([
-    { p: "🤖 AI & Teknologi", s: "Apa dampak Gemini AI terhadap dunia kerja di Indonesia?" },
+  const [hoveredChat, setHoveredChat]   = useState(null);
+
+  // ── State fitur baru ──
+  const [systemPrompt, setSystemPrompt]         = useState(
+    "Kamu adalah asisten AI yang ramah dan membantu."
+  );
+  const [showSystemModal, setShowSystemModal]   = useState(false);
+  const [showSystemBadge, setShowSystemBadge]   = useState(false);
+
+  const [suggestions, setSuggestions]           = useState([
+    { p: "🤖 AI & Teknologi",     s: "Apa dampak Gemini AI terhadap dunia kerja di Indonesia?" },
     { p: "💰 Ekonomi & Investasi", s: "Apa itu Danantara dan bagaimana pengaruhnya ke ekonomi?" },
-    { p: "⚽ Timnas Indonesia", s: "Seberapa jauh peluang Timnas Indonesia di kualifikasi Piala Dunia?" },
-    { p: "📱 Media Sosial", s: "Mengapa konten hiburan dan kuliner paling viral di Indonesia?" },
+    { p: "⚽ Timnas Indonesia",    s: "Seberapa jauh peluang Timnas Indonesia di kualifikasi Piala Dunia?" },
+    { p: "📱 Media Sosial",        s: "Mengapa konten hiburan dan kuliner paling viral di Indonesia?" },
   ]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
-  const [hoveredChat, setHoveredChat] = useState(null);
 
+  // ── Custom hooks ──
+  const { copiedId, copy }  = useCopyToClipboard();
+  const { exportChat }      = useExportChat();
+
+  // ── Refs ──
   const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
-  const editInputRef = useRef(null);
+  const inputRef       = useRef(null);
+  const editInputRef   = useRef(null);
 
-  // ── Theme tokens ──────────────────────────────────────────────────────────
-  const t = isDark ? {
-    bg:           "#0f0f11",
-    surface:      "#17171a",
-    surface2:     "#1e1e22",
-    border:       "#2a2a30",
-    accent:       "#7c6af7",
-    accentSoft:   "rgba(124,106,247,0.1)",
-    accentGlow:   "rgba(124,106,247,0.18)",
-    accentBorder: "rgba(124,106,247,0.25)",
-    text:         "#e8e8f0",
-    textMuted:    "#6b6b7d",
-    textDim:      "#9595a8",
-    userBg:       "#1d1b3a",
-    userBorder:   "rgba(124,106,247,0.3)",
-    topbarBg:     "rgba(15,15,17,0.85)",
-    scrollThumb:  "#2a2a30",
-    inputBg:      "#17171a",
-    avatarBg:     "#1e1e22",
-    badgeBg:      "#1e1e22",
-    dropdownBg:   "#17171a",
-    toggleIcon:   "☀️",
-    toggleTitle:  "Mode Terang",
-  } : {
-    bg:           "#f4f4f8",
-    surface:      "#ffffff",
-    surface2:     "#ededf3",
-    border:       "#dddde8",
-    accent:       "#6c5ce7",
-    accentSoft:   "rgba(108,92,231,0.08)",
-    accentGlow:   "rgba(108,92,231,0.15)",
-    accentBorder: "rgba(108,92,231,0.2)",
-    text:         "#1a1a2e",
-    textMuted:    "#9090a8",
-    textDim:      "#55556e",
-    userBg:       "#ede9ff",
-    userBorder:   "rgba(108,92,231,0.25)",
-    topbarBg:     "rgba(244,244,248,0.9)",
-    scrollThumb:  "#dddde8",
-    inputBg:      "#ffffff",
-    avatarBg:     "#ededf3",
-    badgeBg:      "#ededf3",
-    dropdownBg:   "#ffffff",
-    toggleIcon:   "🌙",
-    toggleTitle:  "Mode Gelap",
-  };
+  const activeChat = chats.find((c) => c.id === activeChatId) ?? null;
 
-  // ── Load/save theme preference ────────────────────────────────────────────
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("theme");
-      if (saved) setIsDark(saved === "dark");
-    } catch (_) {}
-  }, []);
-
+  // ── Persist ke localStorage ──
   useEffect(() => {
     if (!hydrated) return;
-    try { localStorage.setItem("theme", isDark ? "dark" : "light"); } catch (_) {}
-  }, [isDark, hydrated]);
+    localStorage.setItem("chats", JSON.stringify(chats));
+  }, [chats, hydrated]);
 
-  // ── Fetch suggestions ─────────────────────────────────────────────────────
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("chats");
+      if (saved) setChats(JSON.parse(saved));
+    } catch (_) {}
+    setHydrated(true);
+  }, []);
+
+  // Persist system prompt terpisah
+  useEffect(() => {
+    localStorage.setItem("systemPrompt", systemPrompt);
+  }, [systemPrompt]);
+  useEffect(() => {
+    const saved = localStorage.getItem("systemPrompt");
+    if (saved) setSystemPrompt(saved);
+  }, []);
+
+  // ── Scroll ──
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeChat?.messages]);
+
+  // ── Rename focus ──
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingId]);
+
+  // ── Suggestions ──
   useEffect(() => {
     async function fetchSuggestions() {
       try {
@@ -192,45 +210,26 @@ export default function ChatApp() {
         const match = full.match(/\[[\s\S]*\]/);
         if (match) {
           const items = JSON.parse(match[0]);
-          const next = items.slice(0, 4).map((item) => ({ p: `${item.emoji} ${item.kategori}`, s: item.pertanyaan }));
+          const next = items.slice(0, 4).map((item) => ({
+            p: `${item.emoji} ${item.kategori}`,
+            s: item.pertanyaan,
+          }));
           setSuggestions(next);
           try { localStorage.setItem("suggestions", JSON.stringify(next)); } catch (_) {}
         }
-      } catch (_) {
-      } finally { setLoadingSuggestions(false); }
+      } catch (_) {}
+      finally { setLoadingSuggestions(false); }
     }
     fetchSuggestions();
   }, []);
 
-  const activeChat = chats.find((c) => c.id === activeChatId) || null;
-
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem("chats", JSON.stringify(chats));
-  }, [chats, hydrated]);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("chats");
-      if (saved) setChats(JSON.parse(saved));
-    } catch (_) {}
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeChat?.messages]);
-
-  useEffect(() => {
-    if (editingId && editInputRef.current) {
-      editInputRef.current.focus();
-      editInputRef.current.select();
-    }
-  }, [editingId]);
-
+  // ── Chat CRUD ──
   function createNewChat() {
     const id = generateId();
-    setChats((prev) => [{ id, title: "Chat Baru", messages: [], createdAt: Date.now(), updatedAt: Date.now() }, ...prev]);
+    setChats((prev) => [{
+      id, title: "Chat Baru", messages: [],
+      createdAt: Date.now(), updatedAt: Date.now(),
+    }, ...prev]);
     setActiveChatId(id);
     setInput("");
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -238,20 +237,103 @@ export default function ChatApp() {
 
   function deleteChat(id) {
     setChats((prev) => prev.filter((c) => c.id !== id));
-    if (activeChatId === id) {
-      setActiveChatId(chats.filter((c) => c.id !== id)[0]?.id || null);
-    }
+    if (activeChatId === id)
+      setActiveChatId(chats.filter((c) => c.id !== id)[0]?.id ?? null);
   }
 
-  function startRename(chat) { setEditingId(chat.id); setEditingTitle(chat.title); }
+  function startRename(chat)  { setEditingId(chat.id); setEditingTitle(chat.title); }
   function commitRename(id) {
-    if (editingTitle.trim()) setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title: editingTitle.trim() } : c)));
+    if (editingTitle.trim())
+      setChats((prev) => prev.map((c) => c.id === id ? { ...c, title: editingTitle.trim() } : c));
     setEditingId(null);
   }
 
-  async function sendMessage() {
+  // ── FIX: Klik suggestion → buat chat baru + langsung kirim ───────────────
+  // Tidak bergantung state `input` sehingga tidak ada race condition
+  function startChatWithSuggestion(text) {
+    if (isLoading) return;
+
+    const chatId        = generateId();
+    const userMsgId     = generateId();
+    const assistantMsgId = generateId();
+
+    const userMsg = { id: userMsgId, role: "user", content: text, ts: Date.now() };
+
+    // Buat chat baru + user message + placeholder AI dalam satu setState
+    setChats((prev) => [{
+      id: chatId,
+      title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
+      messages: [
+        userMsg,
+        { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() },
+      ],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }, ...prev]);
+
+    setActiveChatId(chatId);
+    setInput("");
+    setIsLoading(true);
+
+    // Kirim ke API langsung pakai `text`, bukan state
+    (async () => {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: text },
+            ],
+          }),
+        });
+
+        if (!res.ok) {
+          let errMsg = `HTTP ${res.status}`;
+          try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+          throw new Error(errMsg);
+        }
+
+        const reader    = res.body.getReader();
+        const decoder   = new TextDecoder();
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          accumulated += decoder.decode(value, { stream: true });
+
+          setChats((prev) => prev.map((c) =>
+            c.id !== chatId ? c : {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id !== assistantMsgId ? m : { ...m, content: accumulated }
+              ),
+              updatedAt: Date.now(),
+            }
+          ));
+        }
+      } catch (err) {
+        setChats((prev) => prev.map((c) =>
+          c.id !== chatId ? c : {
+            ...c,
+            messages: c.messages.map((m) =>
+              m.id !== assistantMsgId ? m : { ...m, content: `⚠️ Error: ${err.message}` }
+            ),
+          }
+        ));
+      } finally {
+        setIsLoading(false);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+    })();
+  }
+
+  // ── Core: send message ────────────────────────────────────────────────────
+  async function sendMessage(overrideMessages = null) {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if (!overrideMessages && (!text || isLoading)) return;
 
     let chatId = activeChatId;
     if (!chatId) {
@@ -266,22 +348,43 @@ export default function ChatApp() {
       setActiveChatId(chatId);
     }
 
-    const userMsg = { id: generateId(), role: "user", content: text, ts: Date.now() };
     const assistantMsgId = generateId();
-    const existingMessages = chats.find((c) => c.id === chatId)?.messages || [];
-    const historyForAPI = [...existingMessages, userMsg];
 
-    setChats((prev) => prev.map((c) => {
-      if (c.id !== chatId) return c;
-      return {
-        ...c,
-        title: c.messages.length === 0 ? text.slice(0, 40) + (text.length > 40 ? "…" : "") : c.title,
-        messages: [...c.messages, userMsg, { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() }],
-        updatedAt: Date.now(),
-      };
-    }));
+    let historyForAPI;
 
-    setInput("");
+    if (overrideMessages) {
+      historyForAPI = overrideMessages;
+      setChats((prev) => prev.map((c) => {
+        if (c.id !== chatId) return c;
+        return {
+          ...c,
+          messages: [...c.messages, { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() }],
+          updatedAt: Date.now(),
+        };
+      }));
+    } else {
+      const userMsg = { id: generateId(), role: "user", content: text, ts: Date.now() };
+      const existingMessages = chats.find((c) => c.id === chatId)?.messages ?? [];
+      historyForAPI = [...existingMessages, userMsg];
+
+      setChats((prev) => prev.map((c) => {
+        if (c.id !== chatId) return c;
+        return {
+          ...c,
+          title: c.messages.length === 0
+            ? text.slice(0, 40) + (text.length > 40 ? "…" : "")
+            : c.title,
+          messages: [
+            ...c.messages,
+            userMsg,
+            { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() },
+          ],
+          updatedAt: Date.now(),
+        };
+      }));
+      setInput("");
+    }
+
     setIsLoading(true);
 
     try {
@@ -289,13 +392,16 @@ export default function ChatApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: historyForAPI.map(({ role, content }) => ({ role, content })),
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...historyForAPI.map(({ role, content }) => ({ role, content })),
+          ],
         }),
       });
 
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`;
-        try { const e = await res.json(); errMsg = e.error || errMsg; } catch (_) {}
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
         throw new Error(errMsg);
       }
 
@@ -311,7 +417,7 @@ export default function ChatApp() {
           c.id !== chatId ? c : {
             ...c,
             messages: c.messages.map((m) =>
-              m.id === assistantMsgId ? { ...m, content: accumulated } : m
+              m.id !== assistantMsgId ? m : { ...m, content: accumulated }
             ),
             updatedAt: Date.now(),
           }
@@ -322,7 +428,7 @@ export default function ChatApp() {
         c.id !== chatId ? c : {
           ...c,
           messages: c.messages.map((m) =>
-            m.id === assistantMsgId ? { ...m, content: `⚠️ Error: ${err.message}` } : m
+            m.id !== assistantMsgId ? m : { ...m, content: `⚠️ Error: ${err.message}` }
           ),
         }
       ));
@@ -332,6 +438,27 @@ export default function ChatApp() {
     }
   }
 
+  // ── Regenerate ──────────────────────────────────────────────────
+  function regenerateLast() {
+    if (!activeChat || isLoading) return;
+
+    const msgs = activeChat.messages;
+    let lastAiIdx = -1;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === "assistant") { lastAiIdx = i; break; }
+    }
+    if (lastAiIdx === -1) return;
+
+    const messagesWithoutLastAI = msgs.slice(0, lastAiIdx);
+
+    setChats((prev) => prev.map((c) =>
+      c.id !== activeChatId ? c : { ...c, messages: messagesWithoutLastAI }
+    ));
+
+    sendMessage(messagesWithoutLastAI);
+  }
+
+  // ── Grouped sidebar ──
   const groupedChats = chats.reduce((acc, chat) => {
     const label = formatDate(chat.updatedAt);
     if (!acc[label]) acc[label] = [];
@@ -339,97 +466,39 @@ export default function ChatApp() {
     return acc;
   }, {});
 
+  // ── Guard ──
   if (status === "loading" || status === "unauthenticated" || !hydrated) {
     return (
-      <div style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 12,
-        background: "#0f0f11", color: "#6b6b7d", fontSize: 14,
-      }}>
-        <span style={{ fontSize: 36 }}>🤖</span>
-        <span style={{ animation: "pulse 1.5s infinite" }}>Sabar ya</span>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#0f0f11] text-[#6b6b7d] text-sm">
+        <span className="text-4xl">🤖</span>
+        <span className="animate-pulse">Memuat sesi…</span>
       </div>
     );
   }
-  async function sendDirect(text) {
-  if (!text.trim() || isLoading) return;
 
-  let chatId = generateId();
-  setChats((prev) => [{
-    id: chatId,
-    title: text.slice(0, 40) + (text.length > 40 ? "…" : ""),
-    messages: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  }, ...prev]);
-  setActiveChatId(chatId);
+  const isLastMsgAI =
+    activeChat?.messages?.length > 0 &&
+    activeChat.messages[activeChat.messages.length - 1].role === "assistant" &&
+    activeChat.messages[activeChat.messages.length - 1].content !== "";
 
-  const userMsg = { id: generateId(), role: "user", content: text, ts: Date.now() };
-  const assistantMsgId = generateId();
-
-  setChats((prev) => prev.map((c) =>
-    c.id !== chatId ? c : {
-      ...c,
-      messages: [userMsg, { id: assistantMsgId, role: "assistant", content: "", ts: Date.now() }],
-      updatedAt: Date.now(),
-    }
-  ));
-
-  setIsLoading(true);
-
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
-    });
-
-    if (!res.ok) {
-      let errMsg = `HTTP ${res.status}`;
-      try { const e = await res.json(); errMsg = e.error || errMsg; } catch (_) {}
-      throw new Error(errMsg);
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let accumulated = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      accumulated += decoder.decode(value, { stream: true });
-      setChats((prev) => prev.map((c) =>
-        c.id !== chatId ? c : {
-          ...c,
-          messages: c.messages.map((m) =>
-            m.id === assistantMsgId ? { ...m, content: accumulated } : m
-          ),
-          updatedAt: Date.now(),
-        }
-      ));
-    }
-  } catch (err) {
-    setChats((prev) => prev.map((c) =>
-      c.id !== chatId ? c : {
-        ...c,
-        messages: c.messages.map((m) =>
-          m.id === assistantMsgId ? { ...m, content: `⚠️ Error: ${err.message}` } : m
-        ),
-      }
-    ));
-  } finally {
-    setIsLoading(false);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }
-}
-
-  // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* ── System Prompt Modal ── */}
+      <SystemPromptModal
+        isOpen={showSystemModal}
+        onClose={() => setShowSystemModal(false)}
+        value={systemPrompt}
+        onChange={(v) => {
+          setSystemPrompt(v);
+          setShowSystemBadge(true);
+          setTimeout(() => setShowSystemBadge(false), 3000);
+        }}
+      />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
-        body, textarea, input, button { font-family: 'Sora', sans-serif; }
+        body, textarea, input, button, select { font-family: 'Sora', sans-serif; }
 
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
@@ -437,7 +506,7 @@ export default function ChatApp() {
         }
         @keyframes blink {
           0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-          40%            { opacity: 1; transform: scale(1); }
+          40%           { opacity: 1;   transform: scale(1); }
         }
         @keyframes msgIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -447,104 +516,72 @@ export default function ChatApp() {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @keyframes themeFade {
-          from { opacity: 0.7; }
-          to   { opacity: 1; }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to   { opacity: 1; transform: translateX(0); }
         }
 
-        .msg-in  { animation: msgIn 0.2s ease; }
-        .drop-in { animation: dropIn 0.15s ease; }
-        .theme-fade { animation: themeFade 0.25s ease; }
+        .animate-shimmer  { animation: shimmer 1.4s infinite linear; }
+        .animate-blink    { animation: blink 1s infinite; }
+        .animate-msg-in   { animation: msgIn 0.2s ease; }
+        .animate-dropIn   { animation: dropIn 0.15s ease; }
 
-        .thin-scroll { scrollbar-width: thin; }
+        .thin-scroll { scrollbar-width: thin; scrollbar-color: #2a2a30 transparent; }
         .thin-scroll::-webkit-scrollbar { width: 4px; }
-        .thin-scroll::-webkit-scrollbar-thumb { border-radius: 2px; }
-
-        /* Focus ring for input box */
-        .input-box:focus-within {
-          border-color: var(--accent-color) !important;
-          box-shadow: 0 0 0 3px var(--accent-glow-color) !important;
-        }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 2px; }
       `}</style>
 
-      <div
-        className="theme-fade"
-        style={{
-          display: "flex", height: "100vh", overflow: "hidden",
-          background: t.bg, color: t.text,
-          "--accent-color": t.accent,
-          "--accent-glow-color": t.accentGlow,
-        }}
-        suppressHydrationWarning
-      >
+      <div className="flex h-screen overflow-hidden bg-[#0f0f11] text-[#e8e8f0]" suppressHydrationWarning>
 
-        {/* ══ SIDEBAR ══ */}
-        <aside style={{
-          display: "flex", flexDirection: "column", flexShrink: 0,
-          background: t.surface, borderRight: `1px solid ${t.border}`,
-          overflow: "hidden",
-          width: sidebarOpen ? 260 : 0,
-          opacity: sidebarOpen ? 1 : 0,
-          transition: "width 250ms ease, opacity 250ms ease",
-        }}>
-
-          {/* Sidebar header */}
-          <div style={{
-            display: "flex", flexDirection: "column",
-            padding: "18px 16px 14px", borderBottom: `1px solid ${t.border}`, gap: 12,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>🤖</span>
-              <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
-                Groq<span style={{ color: t.accent }}>Chat</span>
+        {/* ══════════ SIDEBAR ══════════ */}
+        <aside
+          className="flex flex-col flex-shrink-0 bg-[#17171a] border-r border-[#2a2a30] overflow-hidden transition-all duration-[250ms]"
+          style={{ width: sidebarOpen ? 260 : 0, opacity: sidebarOpen ? 1 : 0 }}
+        >
+          {/* Header sidebar */}
+          <div className="flex flex-col px-4 pt-[18px] pb-[14px] border-b border-[#2a2a30] gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🤖</span>
+              <span className="text-[15px] font-semibold tracking-tight whitespace-nowrap">
+                Groq<span className="text-violet-400">Chat</span>
               </span>
             </div>
+
             <button
               onClick={createNewChat}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 12px",
-                background: t.accentSoft,
-                border: `1px solid ${t.accentBorder}`,
-                borderRadius: 12, color: t.accent,
-                fontSize: 13, fontWeight: 500, cursor: "pointer",
-                transition: "background 0.15s, border-color 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "rgba(124,106,247,0.18)" : "rgba(108,92,231,0.14)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = t.accentSoft; }}
+              className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/25 rounded-xl text-violet-400 text-[13px] font-medium cursor-pointer transition-all hover:bg-violet-500/[0.18] hover:border-violet-500/40"
             >
               <span>✏️</span> Chat Baru
+            </button>
+
+            <button
+              onClick={() => setShowSystemModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-[#1e1e22] border border-[#2a2a30] rounded-xl text-[#9595a8] text-[12px] cursor-pointer transition-all hover:border-violet-500 hover:text-violet-400"
+              title="Atur kepribadian asisten"
+            >
+              <span>⚙️</span>
+              <span className="flex-1 text-left truncate">System Prompt</span>
+              {systemPrompt !== "Kamu adalah asisten AI yang ramah dan membantu." && (
+                <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+              )}
             </button>
           </div>
 
           {/* Chat list */}
-          <div
-            className="thin-scroll"
-            style={{
-              flex: 1, overflowY: "auto", padding: "0 10px 16px",
-              scrollbarColor: `${t.scrollThumb} transparent`,
-            }}
-          >
+          <div className="flex-1 overflow-y-auto px-2.5 pb-4 thin-scroll">
             {chats.length === 0 && (
-              <p style={{ textAlign: "center", color: t.textMuted, fontSize: 12, padding: "24px 8px" }}>
+              <p className="text-center text-[#6b6b7d] text-xs py-6 px-2">
                 Belum ada riwayat chat
               </p>
             )}
+
             {Object.entries(groupedChats).map(([label, items]) => (
               <div key={label}>
-                <div style={{
-                  fontSize: 10.5, fontWeight: 600, color: t.textMuted,
-                  textTransform: "uppercase", letterSpacing: "0.8px",
-                  padding: "12px 6px 6px",
-                }}>
+                <div className="text-[10.5px] font-semibold text-[#6b6b7d] uppercase tracking-[0.8px] px-1.5 pt-3 pb-1.5">
                   {label}
                 </div>
                 {items.map((chat) => {
-                  const isActive = chat.id === activeChatId;
+                  const isActive  = chat.id === activeChatId;
                   const isHovered = hoveredChat === chat.id;
                   return (
                     <div
@@ -552,16 +589,13 @@ export default function ChatApp() {
                       onClick={() => setActiveChatId(chat.id)}
                       onMouseEnter={() => setHoveredChat(chat.id)}
                       onMouseLeave={() => setHoveredChat(null)}
+                      className="flex items-center gap-1.5 px-2.5 py-2 rounded-[9px] cursor-pointer transition-all relative"
                       style={{
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "8px 10px", borderRadius: 9, cursor: "pointer",
-                        transition: "background 0.12s, border-color 0.12s",
-                        position: "relative",
-                        background: isActive ? t.accentSoft : isHovered ? t.surface2 : "transparent",
-                        border: isActive ? `1px solid ${t.accentBorder}` : "1px solid transparent",
+                        background: isActive ? "rgba(124,106,247,0.1)" : isHovered ? "#1e1e22" : "transparent",
+                        border:     isActive ? "1px solid rgba(124,106,247,0.2)" : "1px solid transparent",
                       }}
                     >
-                      <span style={{ fontSize: 13, opacity: 0.7, flexShrink: 0 }}>💬</span>
+                      <span className="text-[13px] opacity-70 flex-shrink-0">💬</span>
 
                       {editingId === chat.id ? (
                         <input
@@ -570,54 +604,32 @@ export default function ChatApp() {
                           onChange={(e) => setEditingTitle(e.target.value)}
                           onBlur={() => commitRename(chat.id)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") commitRename(chat.id);
+                            if (e.key === "Enter")  commitRename(chat.id);
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          style={{
-                            flex: 1, background: t.surface2,
-                            border: `1px solid ${t.accent}`,
-                            borderRadius: 5, padding: "2px 6px",
-                            fontSize: 12, color: t.text, outline: "none",
-                          }}
+                          className="flex-1 bg-[#1e1e22] border border-violet-500 rounded px-1.5 py-0.5 text-xs text-[#e8e8f0] outline-none"
                         />
                       ) : (
-                        <span style={{
-                          flex: 1, fontSize: 13, whiteSpace: "nowrap",
-                          overflow: "hidden", textOverflow: "ellipsis",
-                          color: isActive ? t.text : t.textDim,
-                        }}>
+                        <span
+                          className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ color: isActive ? "#e8e8f0" : "#9595a8" }}
+                        >
                           {chat.title}
                         </span>
                       )}
 
                       {isHovered && (
-                        <div style={{ display: "flex", gap: 2, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             title="Rename"
                             onClick={() => startRename(chat)}
-                            style={{
-                              width: 24, height: 24, display: "flex",
-                              alignItems: "center", justifyContent: "center",
-                              borderRadius: 5, fontSize: 12, color: t.textMuted,
-                              background: "transparent", border: "none", cursor: "pointer",
-                              transition: "color 0.12s, background 0.12s",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.color = t.text; e.currentTarget.style.background = t.border; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.background = "transparent"; }}
+                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-[#e8e8f0] hover:bg-[#2a2a30]"
                           >✏️</button>
                           <button
                             title="Hapus"
                             onClick={() => deleteChat(chat.id)}
-                            style={{
-                              width: 24, height: 24, display: "flex",
-                              alignItems: "center", justifyContent: "center",
-                              borderRadius: 5, fontSize: 12, color: t.textMuted,
-                              background: "transparent", border: "none", cursor: "pointer",
-                              transition: "color 0.12s, background 0.12s",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(248,113,113,0.1)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.background = "transparent"; }}
+                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-red-400 hover:bg-red-400/10"
                           >🗑️</button>
                         </div>
                       )}
@@ -629,139 +641,81 @@ export default function ChatApp() {
           </div>
         </aside>
 
-        {/* ══ MAIN ══ */}
-        <main style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", background: t.bg }}>
+        {/* ══════════ MAIN ══════════ */}
+        <main className="flex flex-col flex-1 overflow-hidden bg-[#0f0f11]">
 
           {/* Topbar */}
-          <div style={{
-            height: 52, display: "flex", alignItems: "center", gap: 12,
-            padding: "0 18px", borderBottom: `1px solid ${t.border}`,
-            flexShrink: 0, background: t.topbarBg, backdropFilter: "blur(10px)",
-          }}>
-            {/* Toggle sidebar */}
+          <div className="h-[52px] flex items-center gap-3 px-[18px] border-b border-[#2a2a30] flex-shrink-0 bg-[#0f0f11]/80 backdrop-blur-[10px]">
             <button
               onClick={() => setSidebarOpen((s) => !s)}
               title="Toggle sidebar"
-              style={{
-                width: 32, height: 32, display: "flex",
-                alignItems: "center", justifyContent: "center",
-                borderRadius: 7, border: `1px solid ${t.border}`,
-                color: t.textMuted, fontSize: 14, cursor: "pointer",
-                flexShrink: 0, background: "transparent",
-                transition: "color 0.12s, border-color 0.12s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = t.text; e.currentTarget.style.borderColor = t.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.borderColor = t.border; }}
+              className="w-8 h-8 flex items-center justify-center rounded-[7px] border border-[#2a2a30] text-[#6b6b7d] text-sm cursor-pointer flex-shrink-0 bg-transparent transition-all hover:text-[#e8e8f0] hover:border-violet-500"
             >
               {sidebarOpen ? "◀" : "▶"}
             </button>
 
-            {/* Chat title */}
-            <div style={{
-              flex: 1, fontSize: 14, fontWeight: 500,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              color: !activeChat ? t.textMuted : t.textDim,
-              fontStyle: !activeChat ? "italic" : "normal",
-            }}>
+            <div
+              className="flex-1 text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ color: !activeChat ? "#6b6b7d" : "#9595a8", fontStyle: !activeChat ? "italic" : "normal" }}
+            >
               {activeChat ? activeChat.title : "Pilih atau buat chat baru"}
             </div>
 
-            {/* Model badge */}
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
-              color: t.textMuted, background: t.badgeBg,
-              border: `1px solid ${t.border}`, borderRadius: 5,
-              padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0,
-            }}>
+            {showSystemBadge && (
+              <span className="text-[10px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2.5 py-0.5 whitespace-nowrap"
+                style={{ animation: "slideIn 0.2s ease" }}>
+                ✓ System prompt tersimpan
+              </span>
+            )}
+
+            {activeChat && activeChat.messages.length > 0 && (
+              <ExportMenu onExport={(format) => exportChat(activeChat, format)} />
+            )}
+
+            <span className="font-mono text-[10px] text-[#6b6b7d] bg-[#1e1e22] border border-[#2a2a30] rounded px-2 py-0.5 whitespace-nowrap flex-shrink-0">
               llama-3.3-70b
             </span>
 
-            {/* ── Theme toggle ── */}
-            <button
-              onClick={() => setIsDark((d) => !d)}
-              title={t.toggleTitle}
-              style={{
-                width: 32, height: 32, display: "flex",
-                alignItems: "center", justifyContent: "center",
-                borderRadius: 7, border: `1px solid ${t.border}`,
-                background: "transparent", fontSize: 15, cursor: "pointer",
-                flexShrink: 0, transition: "border-color 0.15s, background 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.background = t.accentSoft; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.background = "transparent"; }}
-            >
-              {t.toggleIcon}
-            </button>
-
             {/* User menu */}
-            <div style={{ position: "relative", flexShrink: 0 }}>
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setShowUserMenu((v) => !v)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  background: t.surface2, border: `1px solid ${t.border}`,
-                  borderRadius: 12, paddingLeft: 5, paddingRight: 10, paddingTop: 4, paddingBottom: 4,
-                  cursor: "pointer", transition: "border-color 0.12s, background 0.12s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.background = t.accentSoft; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.background = t.surface2; }}
+                className="flex items-center gap-2 bg-[#1e1e22] border border-[#2a2a30] rounded-xl pl-[5px] pr-2.5 py-1 cursor-pointer transition-all hover:border-violet-500 hover:bg-violet-500/10"
               >
                 {session?.user?.image && (
-                  <img src={session.user.image} alt={session.user.name} referrerPolicy="no-referrer"
-                    style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${t.border}`, objectFit: "cover" }} />
+                  <img
+                    src={session.user.image} alt={session.user.name}
+                    referrerPolicy="no-referrer"
+                    className="w-[26px] h-[26px] rounded-full border border-[#2a2a30] object-cover"
+                  />
                 )}
-                <span style={{ fontSize: 13, color: t.textDim, whiteSpace: "nowrap", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis" }}>
+                <span className="text-[13px] text-[#9595a8] whitespace-nowrap max-w-[80px] overflow-hidden text-ellipsis">
                   {session?.user?.name?.split(" ")[0]}
                 </span>
-                <span style={{ fontSize: 10, color: t.textMuted }}>{showUserMenu ? "▴" : "▾"}</span>
+                <span className="text-[10px] text-[#6b6b7d]">{showUserMenu ? "▴" : "▾"}</span>
               </button>
 
               {showUserMenu && (
                 <>
-                  <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setShowUserMenu(false)} />
-                  <div className="drop-in" style={{
-                    position: "absolute", top: "calc(100% + 8px)", right: 0,
-                    width: 240, background: t.dropdownBg,
-                    border: `1px solid ${t.border}`, borderRadius: 12,
-                    overflow: "hidden", zIndex: 10,
-                    boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(0,0,0,0.12)",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16 }}>
+                  <div className="fixed inset-0 z-[9]" onClick={() => setShowUserMenu(false)} />
+                  <div className="animate-dropIn absolute top-[calc(100%+8px)] right-0 w-60 bg-[#17171a] border border-[#2a2a30] rounded-xl overflow-hidden z-10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+                    <div className="flex items-center gap-3 p-4">
                       {session?.user?.image && (
-                        <img src={session.user.image} alt={session.user.name} referrerPolicy="no-referrer"
-                          style={{ width: 40, height: 40, borderRadius: "50%", border: `1px solid ${t.border}`, objectFit: "cover", flexShrink: 0 }} />
+                        <img
+                          src={session.user.image} alt={session.user.name}
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-full border border-[#2a2a30] object-cover flex-shrink-0"
+                        />
                       )}
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{session?.user?.name}</div>
-                        <div style={{ fontSize: 11, color: t.textMuted, marginTop: 2, wordBreak: "break-all" }}>{session?.user?.email}</div>
+                        <div className="text-[13px] font-semibold text-[#e8e8f0]">{session?.user?.name}</div>
+                        <div className="text-[11px] text-[#6b6b7d] mt-0.5 break-all">{session?.user?.email}</div>
                       </div>
                     </div>
-                    <div style={{ height: 1, background: t.border }} />
-                    {/* Theme toggle inside dropdown */}
-                    <button
-                      onClick={() => { setIsDark((d) => !d); setShowUserMenu(false); }}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 10,
-                        padding: "12px 16px", background: "transparent", border: "none",
-                        fontSize: 13, color: t.textDim, cursor: "pointer", textAlign: "left",
-                        transition: "background 0.12s, color 0.12s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = t.accentSoft; e.currentTarget.style.color = t.accent; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = t.textDim; }}
-                    >
-                      <span>{t.toggleIcon}</span> {t.toggleTitle}
-                    </button>
-                    <div style={{ height: 1, background: t.border }} />
+                    <div className="h-px bg-[#2a2a30]" />
                     <button
                       onClick={() => { setShowUserMenu(false); signOut({ callbackUrl: "/login" }); }}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 10,
-                        padding: "12px 16px", background: "transparent", border: "none",
-                        fontSize: 13, color: t.textDim, cursor: "pointer", textAlign: "left",
-                        transition: "background 0.12s, color 0.12s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.08)"; e.currentTarget.style.color = "#f87171"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = t.textDim; }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none text-[13px] text-[#9595a8] cursor-pointer text-left transition-all hover:bg-red-400/[0.08] hover:text-red-400"
                     >
                       <span>🚪</span> Keluar
                     </button>
@@ -771,127 +725,109 @@ export default function ChatApp() {
             </div>
           </div>
 
-          {/* ── Messages ── */}
-          <div
-            className="thin-scroll"
-            style={{
-              flex: 1, overflowY: "auto", paddingTop: 24, paddingBottom: 8,
-              scrollbarColor: `${t.scrollThumb} transparent`,
-            }}
-          >
+          {/* ══ Messages ══ */}
+          <div className="flex-1 overflow-y-auto pt-6 pb-2 thin-scroll">
             {!activeChat ? (
-              <div style={{
-                height: "100%", display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                gap: 20, padding: "0 40px", textAlign: "center",
-              }}>
-                <div style={{
-                  width: 56, height: 56, background: t.accentSoft,
-                  border: `1px solid ${t.accentBorder}`, borderRadius: 16,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
-                }}>🤖</div>
-                <div style={{ fontSize: 22, fontWeight: 600, color: t.text, letterSpacing: "-0.02em" }}>
-                  Halo! Apa yang bisa dibantu?
-                </div>
-                <div style={{ fontSize: 14, color: t.textMuted, maxWidth: 280, lineHeight: 1.6 }}>
-                  Mulai percakapan baru atau pilih chat dari sidebar.
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 480, width: "100%" }}>
+              <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
+                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">🤖</div>
+                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">Halo! Apa yang bisa dibantu?</div>
+                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">Mulai percakapan baru atau pilih chat dari sidebar.</div>
+                <div className="grid grid-cols-2 gap-2.5 max-w-[480px] w-full">
                   {loadingSuggestions
-                    ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} isDark={isDark} />)
+                    ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
                     : suggestions.map((sg) => (
                         <button
                           key={sg.s}
-                          onClick={() => sendDirect(sg.s)}
-                          style={{
-                            background: t.surface, border: `1px solid ${t.border}`,
-                            borderRadius: 12, padding: "12px 14px",
-                            cursor: "pointer", textAlign: "left",
-                            transition: "border-color 0.12s, background 0.12s",
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.background = t.accentSoft; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.background = t.surface; }}
+                          // ✅ FIX: Pakai startChatWithSuggestion — tidak ada race condition
+                          onClick={() => startChatWithSuggestion(sg.s)}
+                          disabled={isLoading}
+                          className="bg-[#17171a] border border-[#2a2a30] rounded-xl p-3 cursor-pointer text-left transition-all hover:border-violet-500 hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <p style={{ fontSize: 12, color: t.textDim, margin: 0 }}>{sg.p}</p>
-                          <span style={{ fontSize: 11, color: t.textMuted, marginTop: 2, display: "block" }}>{sg.s}</span>
+                          <p className="text-xs text-[#9595a8] m-0">{sg.p}</p>
+                          <span className="text-[11px] text-[#6b6b7d] mt-0.5 block">{sg.s}</span>
                         </button>
                       ))}
                 </div>
               </div>
             ) : activeChat.messages.length === 0 ? (
-              <div style={{
-                height: "100%", display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                gap: 20, padding: "0 40px", textAlign: "center",
-              }}>
-                <div style={{
-                  width: 56, height: 56, background: t.accentSoft,
-                  border: `1px solid ${t.accentBorder}`, borderRadius: 16,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
-                }}>✨</div>
-                <div style={{ fontSize: 22, fontWeight: 600, color: t.text, letterSpacing: "-0.02em" }}>
-                  Chat baru siap!
-                </div>
-                <div style={{ fontSize: 14, color: t.textMuted, maxWidth: 280, lineHeight: 1.6 }}>
-                  Tulis pesan pertamamu di bawah untuk memulai.
-                </div>
+              <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
+                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">✨</div>
+                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">Chat baru siap!</div>
+                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">Tulis pesan pertamamu di bawah untuk memulai.</div>
               </div>
             ) : (
-              activeChat.messages.map((msg) => (
-                <div key={msg.id} className="msg-in" style={{ maxWidth: 760, margin: "0 auto", padding: "6px 24px" }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                    <div style={{
-                      width: 30, height: 30, borderRadius: 8, flexShrink: 0, marginTop: 2,
-                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                      background: msg.role === "user" ? t.userBg : t.avatarBg,
-                      border: msg.role === "user" ? `1px solid ${t.userBorder}` : `1px solid ${t.border}`,
-                    }}>
-                      {msg.role === "user" ? "👤" : "🤖"}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, fontSize: 11, color: t.textMuted }}>
-                        <span style={{ fontWeight: 600, color: t.textDim }}>
-                          {msg.role === "user" ? "Kamu" : "Asisten"}
-                        </span>
-                        <span>{formatTime(msg.ts)}</span>
+              <>
+                {activeChat.messages.map((msg) => (
+                  <div key={msg.id} className="animate-msg-in max-w-[760px] mx-auto px-6 py-1.5 group">
+                    <div className="flex gap-3 items-start">
+                      {/* Avatar */}
+                      <div
+                        className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-sm flex-shrink-0 mt-0.5"
+                        style={{
+                          background: msg.role === "user" ? "#1d1b3a" : "#1e1e22",
+                          border: msg.role === "user"
+                            ? "1px solid rgba(124,106,247,0.3)"
+                            : "1px solid #2a2a30",
+                        }}
+                      >
+                        {msg.role === "user" ? "👤" : "🤖"}
                       </div>
-                      {msg.role === "user" ? (
-                        <div style={{
-                          display: "inline-block", maxWidth: "100%",
-                          background: t.userBg, border: `1px solid ${t.userBorder}`,
-                          borderRadius: "4px 12px 12px 12px",
-                          padding: "10px 14px", fontSize: 14, lineHeight: 1.7,
-                          color: t.text, whiteSpace: "pre-wrap", wordBreak: "break-word",
-                        }}>
-                          {msg.content}
+
+                      <div className="flex-1 min-w-0">
+                        {/* Meta */}
+                        <div className="flex items-center gap-2 mb-1.5 text-[11px] text-[#6b6b7d]">
+                          <span className="font-semibold text-[#9595a8]">
+                            {msg.role === "user" ? "Kamu" : "Asisten"}
+                          </span>
+                          <span>{formatTime(msg.ts)}</span>
+
+                          {msg.content && (
+                            <button
+                              onClick={() => copy(msg.content, msg.id)}
+                              title="Copy pesan"
+                              className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border border-[#2a2a30] bg-[#1e1e22] hover:border-violet-500 hover:text-violet-400 text-[#6b6b7d]"
+                            >
+                              {copiedId === msg.id ? "✓ Tersalin" : "⎘ Copy"}
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <div style={{ fontSize: 14, lineHeight: 1.7, color: t.text, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                          {msg.content === "" ? <TypingDot isDark={isDark} /> : msg.content}
-                        </div>
-                      )}
+
+                        {/* Bubble */}
+                        {msg.role === "user" ? (
+                          <div className="inline-block max-w-full bg-[#1d1b3a] border border-violet-500/30 rounded-[4px_12px_12px_12px] px-3.5 py-2.5 text-sm leading-[1.7] text-[#e8e8f0] whitespace-pre-wrap break-words">
+                            {msg.content}
+                          </div>
+                        ) : (
+                          <div className="text-sm leading-[1.7] text-[#e8e8f0] whitespace-pre-wrap break-words">
+                            {msg.content === "" ? <TypingDot /> : msg.content}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+
+                {isLastMsgAI && !isLoading && (
+                  <div className="max-w-[760px] mx-auto px-6 py-2 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#2a2a30]" />
+                    <button
+                      onClick={regenerateLast}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-[#9595a8] border border-[#2a2a30] bg-[#17171a] hover:border-violet-500 hover:text-violet-400 transition-all"
+                      title="Minta jawaban baru"
+                    >
+                      🔄 Regenerate
+                    </button>
+                    <div className="h-px flex-1 bg-[#2a2a30]" />
+                  </div>
+                )}
+              </>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* ── Input ── */}
-          <div style={{
-            padding: "16px 24px 20px", borderTop: `1px solid ${t.border}`,
-            background: t.bg, flexShrink: 0,
-          }}>
-            <div
-              className="input-box"
-              style={{
-                maxWidth: 760, margin: "0 auto", display: "flex", gap: 10,
-                background: t.inputBg, border: `1px solid ${t.border}`,
-                borderRadius: 14, padding: "10px 12px",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            >
+          {/* ══ Input area ══ */}
+          <div className="px-6 pt-4 pb-5 border-t border-[#2a2a30] bg-[#0f0f11] flex-shrink-0">
+            <div className="max-w-[760px] mx-auto flex gap-2.5 bg-[#17171a] border border-[#2a2a30] rounded-[14px] px-3 py-2.5 transition-all focus-within:border-violet-500 focus-within:shadow-[0_0_0_3px_rgba(124,106,247,0.18)]">
               <textarea
                 ref={inputRef}
                 rows={1}
@@ -905,32 +841,18 @@ export default function ChatApp() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                 }}
-                style={{
-                  flex: 1, background: "transparent", border: "none", outline: "none",
-                  color: t.text, fontSize: 14, lineHeight: 1.5,
-                  resize: "none", minHeight: 22, maxHeight: 160, padding: "2px 0",
-                }}
+                className="flex-1 bg-transparent border-none outline-none text-[#e8e8f0] text-sm leading-relaxed resize-none min-h-[22px] max-h-[160px] py-0.5 placeholder-[#6b6b7d]"
               />
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
                 title="Kirim"
-                style={{
-                  width: 36, height: 36, background: t.accent, borderRadius: 9,
-                  color: "#fff", fontSize: 15,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  alignSelf: "flex-end", flexShrink: 0, border: "none",
-                  opacity: (!input.trim() || isLoading) ? 0.35 : 1,
-                  cursor: (!input.trim() || isLoading) ? "not-allowed" : "pointer",
-                  transition: "opacity 0.12s, transform 0.12s",
-                }}
-                onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.transform = "scale(1.05)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                className="w-9 h-9 bg-violet-500 rounded-[9px] text-white text-[15px] flex items-center justify-center self-end flex-shrink-0 border-none transition-all hover:opacity-85 hover:scale-105 disabled:opacity-35 disabled:cursor-not-allowed disabled:scale-100"
               >
                 {isLoading ? "⏳" : "➤"}
               </button>
             </div>
-            <div style={{ maxWidth: 760, margin: "8px auto 0", textAlign: "center", fontSize: 11, color: t.textMuted }}>
+            <div className="max-w-[760px] mx-auto mt-2 text-center text-[11px] text-[#6b6b7d]">
               Powered by Groq · llama-3.3-70b-versatile · Free tier
             </div>
           </div>
