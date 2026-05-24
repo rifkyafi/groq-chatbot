@@ -37,9 +37,9 @@ function formatDate(ts) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="bg-[#17171a] border border-[#2a2a30] rounded-xl p-3">
-      <span className="block h-[11px] rounded w-[55%] mb-2 bg-gradient-to-r from-[#2a2a30] via-[#1e1e22] to-[#2a2a30] bg-[length:200%_100%] animate-shimmer" />
-      <span className="block h-[11px] rounded w-[85%] bg-gradient-to-r from-[#2a2a30] via-[#1e1e22] to-[#2a2a30] bg-[length:200%_100%] animate-shimmer" />
+    <div className="bg-[rgba(255,255,255,0.04)] border border-[rgba(123,229,255,0.12)] rounded-3xl p-3">
+      <span className="block h-[11px] rounded w-[55%] mb-2 bg-gradient-to-r from-[rgba(123,229,255,0.08)] via-[rgba(123,229,255,0.14)] to-[rgba(123,229,255,0.08)] bg-[length:200%_100%] animate-shimmer" />
+      <span className="block h-[11px] rounded w-[85%] bg-gradient-to-r from-[rgba(123,229,255,0.08)] via-[rgba(123,229,255,0.14)] to-[rgba(123,229,255,0.08)] bg-[length:200%_100%] animate-shimmer" />
     </div>
   );
 }
@@ -50,7 +50,7 @@ function TypingDot() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-blink"
+          className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-blink"
           style={{ animationDelay: `${i * 0.15}s` }}
         />
       ))}
@@ -73,7 +73,7 @@ function ExportMenu({ onExport }) {
       <button
         onClick={() => setOpen((v) => !v)}
         title="Export chat"
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] text-[#9595a8] border border-[#2a2a30] bg-[#1e1e22] hover:border-violet-500 hover:text-violet-400 transition-all"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-[11px] text-[var(--text-dim)] border border-[rgba(123,229,255,0.12)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(123,229,255,0.2)] hover:text-[var(--text)] transition-all"
       >
         ⬇️ Export
       </button>
@@ -81,8 +81,8 @@ function ExportMenu({ onExport }) {
       {open && (
         <>
           <div className="fixed inset-0 z-[9]" onClick={() => setOpen(false)} />
-          <div className="absolute top-[calc(100%+6px)] right-0 w-52 bg-[#17171a] border border-[#2a2a30] rounded-xl z-10 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-dropIn">
-            <p className="text-[9px] font-semibold text-[#6b6b7d] uppercase tracking-widest px-3 pt-3 pb-1">
+          <div className="absolute top-[calc(100%+6px)] right-0 w-52 bg-[rgba(14,21,36,0.96)] border border-[rgba(123,229,255,0.12)] rounded-3xl z-10 overflow-hidden shadow-[0_24px_40px_rgba(0,0,0,0.24)] animate-dropIn">
+            <p className="text-[9px] font-semibold text-[var(--text-dim)] uppercase tracking-widest px-3 pt-3 pb-1">
               Pilih format
             </p>
             {formats.map((f) => (
@@ -631,7 +631,7 @@ export default function ChatApp() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
-        body, textarea, input, button, select { font-family: 'Sora', sans-serif; }
+        body, textarea, input, button, select { font-family: 'Montserrat', sans-serif; }
 
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
@@ -659,46 +659,46 @@ export default function ChatApp() {
         .animate-msg-in   { animation: msgIn 0.2s ease; }
         .animate-dropIn   { animation: dropIn 0.15s ease; }
 
-        .thin-scroll { scrollbar-width: thin; scrollbar-color: #2a2a30 transparent; }
+        .thin-scroll { scrollbar-width: thin; scrollbar-color: rgba(123,229,255,0.14) transparent; }
         .thin-scroll::-webkit-scrollbar { width: 4px; }
-        .thin-scroll::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 2px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: rgba(123,229,255,0.14); border-radius: 2px; }
       `}</style>
 
       <div
-        className="flex h-screen overflow-hidden bg-[#0f0f11] text-[#e8e8f0]"
+        className="flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(123,229,255,0.08),_transparent_25%),var(--bg)] text-[var(--text)]"
         suppressHydrationWarning
       >
         {/* ══════════ SIDEBAR ══════════ */}
         <aside
-          className="flex flex-col flex-shrink-0 bg-[#17171a] border-r border-[#2a2a30] overflow-hidden transition-all duration-[250ms]"
+          className="flex flex-col flex-shrink-0 bg-[var(--surface)] border-r border-[rgba(123,229,255,0.14)] overflow-hidden transition-all duration-200"
           style={{ width: sidebarOpen ? 260 : 0, opacity: sidebarOpen ? 1 : 0 }}
         >
           {/* Header sidebar */}
-          <div className="flex flex-col px-4 pt-[18px] pb-[14px] border-b border-[#2a2a30] gap-3">
+          <div className="flex flex-col px-4 pt-[18px] pb-[14px] border-b border-[rgba(123,229,255,0.12)] gap-3">
             <div className="flex items-center gap-2">
               <span className="text-lg">🤖</span>
               <span className="text-[15px] font-semibold tracking-tight whitespace-nowrap">
-                Groq<span className="text-violet-400">Chat</span>
+                Groq<span className="text-[var(--accent)]">Chat</span>
               </span>
             </div>
 
             <button
               onClick={createNewChat}
-              className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/25 rounded-xl text-violet-400 text-[13px] font-medium cursor-pointer transition-all hover:bg-violet-500/[0.18] hover:border-violet-500/40"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(123,229,255,0.08)] border border-[rgba(123,229,255,0.14)] rounded-2xl text-[var(--accent)] text-[13px] font-medium cursor-pointer transition-all hover:bg-[rgba(123,229,255,0.14)] hover:border-[rgba(123,229,255,0.22)]"
             >
-              <span>✏️</span> Chat Baru
+              <span className="text-[14px]">✦</span> Chat Baru
             </button>
 
             <button
               onClick={() => setShowSystemModal(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-[#1e1e22] border border-[#2a2a30] rounded-xl text-[#9595a8] text-[12px] cursor-pointer transition-all hover:border-violet-500 hover:text-violet-400"
+              className="flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(123,229,255,0.12)] rounded-2xl text-[var(--text-dim)] text-[12px] cursor-pointer transition-all hover:border-[rgba(123,229,255,0.22)] hover:text-[var(--text)]"
               title="Atur kepribadian asisten"
             >
-              <span>⚙️</span>
+              <span className="text-[14px]">⚙</span>
               <span className="flex-1 text-left truncate">System Prompt</span>
               {systemPrompt !==
                 "Kamu adalah asisten AI yang ramah dan membantu." && (
-                <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[var(--accent)] flex-shrink-0" />
               )}
             </button>
           </div>
@@ -713,7 +713,7 @@ export default function ChatApp() {
 
             {Object.entries(groupedChats).map(([label, items]) => (
               <div key={label}>
-                <div className="text-[10.5px] font-semibold text-[#6b6b7d] uppercase tracking-[0.8px] px-1.5 pt-3 pb-1.5">
+                <div className="text-[10.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.8px] px-1.5 pt-3 pb-1.5">
                   {label}
                 </div>
                 {items.map((chat) => {
@@ -725,15 +725,15 @@ export default function ChatApp() {
                       onClick={() => setActiveChatId(chat.id)}
                       onMouseEnter={() => setHoveredChat(chat.id)}
                       onMouseLeave={() => setHoveredChat(null)}
-                      className="flex items-center gap-1.5 px-2.5 py-2 rounded-[9px] cursor-pointer transition-all relative"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl cursor-pointer transition-all relative"
                       style={{
                         background: isActive
-                          ? "rgba(124,106,247,0.1)"
+                          ? "rgba(123,229,255,0.12)"
                           : isHovered
-                            ? "#1e1e22"
+                            ? "rgba(123,229,255,0.06)"
                             : "transparent",
                         border: isActive
-                          ? "1px solid rgba(124,106,247,0.2)"
+                          ? "1px solid rgba(123,229,255,0.18)"
                           : "1px solid transparent",
                       }}
                     >
@@ -752,12 +752,14 @@ export default function ChatApp() {
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 bg-[#1e1e22] border border-violet-500 rounded px-1.5 py-0.5 text-xs text-[#e8e8f0] outline-none"
+                          className="flex-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(123,229,255,0.14)] rounded px-1.5 py-0.5 text-xs text-[var(--text)] outline-none"
                         />
                       ) : (
                         <span
                           className="flex-1 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
-                          style={{ color: isActive ? "#e8e8f0" : "#9595a8" }}
+                          style={{
+                            color: isActive ? "var(--text)" : "var(--text-dim)",
+                          }}
                         >
                           {chat.title}
                         </span>
@@ -771,14 +773,14 @@ export default function ChatApp() {
                           <button
                             title="Rename"
                             onClick={() => startRename(chat)}
-                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-[#e8e8f0] hover:bg-[#2a2a30]"
+                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[var(--text-dim)] bg-transparent border-none cursor-pointer transition-all hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)]"
                           >
                             ✏️
                           </button>
                           <button
                             title="Hapus"
                             onClick={() => deleteChat(chat.id)}
-                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[#6b6b7d] bg-transparent border-none cursor-pointer transition-all hover:text-red-400 hover:bg-red-400/10"
+                            className="w-6 h-6 flex items-center justify-center rounded text-xs text-[var(--text-dim)] bg-transparent border-none cursor-pointer transition-all hover:text-[var(--danger)] hover:bg-[rgba(251,113,133,0.1)]"
                           >
                             🗑️
                           </button>
@@ -793,13 +795,13 @@ export default function ChatApp() {
         </aside>
 
         {/* ══════════ MAIN ══════════ */}
-        <main className="flex flex-col flex-1 overflow-hidden bg-[#0f0f11]">
+        <main className="flex flex-col flex-1 overflow-hidden bg-[rgba(6,8,18,0.88)]">
           {/* Topbar */}
-          <div className="h-[52px] flex items-center gap-3 px-[18px] border-b border-[#2a2a30] flex-shrink-0 bg-[#0f0f11]/80 backdrop-blur-[10px]">
+          <div className="h-[52px] flex items-center gap-3 px-[18px] border-b border-[rgba(123,229,255,0.1)] flex-shrink-0 bg-[rgba(6,8,18,0.76)] backdrop-blur-md">
             <button
               onClick={() => setSidebarOpen((s) => !s)}
               title="Toggle sidebar"
-              className="w-8 h-8 flex items-center justify-center rounded-[7px] border border-[#2a2a30] text-[#6b6b7d] text-sm cursor-pointer flex-shrink-0 bg-transparent transition-all hover:text-[#e8e8f0] hover:border-violet-500"
+              className="w-8 h-8 flex items-center justify-center rounded-2xl border border-[rgba(123,229,255,0.14)] text-[var(--text-dim)] text-sm cursor-pointer flex-shrink-0 bg-[rgba(255,255,255,0.04)] transition-all hover:text-[var(--text)] hover:border-[rgba(123,229,255,0.24)]"
             >
               {sidebarOpen ? "◀" : "▶"}
             </button>
@@ -807,7 +809,7 @@ export default function ChatApp() {
             <div
               className="flex-1 text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis"
               style={{
-                color: !activeChat ? "#6b6b7d" : "#9595a8",
+                color: !activeChat ? "var(--text-dim)" : "var(--text)",
                 fontStyle: !activeChat ? "italic" : "normal",
               }}
             >
@@ -816,7 +818,7 @@ export default function ChatApp() {
 
             {showSystemBadge && (
               <span
-                className="text-[10px] font-mono text-violet-400 bg-violet-500/10 border border-violet-500/25 rounded-full px-2.5 py-0.5 whitespace-nowrap"
+                className="text-[10px] font-mono text-[var(--accent)] bg-[rgba(123,229,255,0.08)] border border-[rgba(123,229,255,0.12)] rounded-full px-2.5 py-0.5 whitespace-nowrap"
                 style={{ animation: "slideIn 0.2s ease" }}
               >
                 ✓ System prompt tersimpan
@@ -829,7 +831,7 @@ export default function ChatApp() {
               />
             )}
 
-            <span className="font-mono text-[10px] text-[#6b6b7d] bg-[#1e1e22] border border-[#2a2a30] rounded px-2 py-0.5 whitespace-nowrap flex-shrink-0">
+            <span className="font-mono text-[10px] text-[var(--text-dim)] bg-[rgba(255,255,255,0.04)] border border-[rgba(123,229,255,0.12)] rounded-full px-2 py-0.5 whitespace-nowrap flex-shrink-0">
               llama-3.3-70b
             </span>
 
@@ -837,20 +839,20 @@ export default function ChatApp() {
             <div className="relative flex-shrink-0">
               <button
                 onClick={() => setShowUserMenu((v) => !v)}
-                className="flex items-center gap-2 bg-[#1e1e22] border border-[#2a2a30] rounded-xl pl-[5px] pr-2.5 py-1 cursor-pointer transition-all hover:border-violet-500 hover:bg-violet-500/10"
+                className="flex items-center gap-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(123,229,255,0.12)] rounded-2xl pl-[5px] pr-2.5 py-1 cursor-pointer transition-all hover:border-[rgba(123,229,255,0.24)] hover:bg-[rgba(123,229,255,0.08)]"
               >
                 {session?.user?.image && (
                   <img
                     src={session.user.image}
                     alt={session.user.name}
                     referrerPolicy="no-referrer"
-                    className="w-[26px] h-[26px] rounded-full border border-[#2a2a30] object-cover"
+                    className="w-[26px] h-[26px] rounded-full border border-[rgba(123,229,255,0.14)] object-cover"
                   />
                 )}
-                <span className="text-[13px] text-[#9595a8] whitespace-nowrap max-w-[80px] overflow-hidden text-ellipsis">
+                <span className="text-[13px] text-[var(--text-dim)] whitespace-nowrap max-w-[80px] overflow-hidden text-ellipsis">
                   {session?.user?.name?.split(" ")[0]}
                 </span>
-                <span className="text-[10px] text-[#6b6b7d]">
+                <span className="text-[10px] text-[var(--text-dim)]">
                   {showUserMenu ? "▴" : "▾"}
                 </span>
               </button>
@@ -861,32 +863,32 @@ export default function ChatApp() {
                     className="fixed inset-0 z-[9]"
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className="animate-dropIn absolute top-[calc(100%+8px)] right-0 w-60 bg-[#17171a] border border-[#2a2a30] rounded-xl overflow-hidden z-10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+                  <div className="animate-dropIn absolute top-[calc(100%+8px)] right-0 w-60 bg-[rgba(14,21,36,0.96)] border border-[rgba(123,229,255,0.12)] rounded-3xl overflow-hidden z-10 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
                     <div className="flex items-center gap-3 p-4">
                       {session?.user?.image && (
                         <img
                           src={session.user.image}
                           alt={session.user.name}
                           referrerPolicy="no-referrer"
-                          className="w-10 h-10 rounded-full border border-[#2a2a30] object-cover flex-shrink-0"
+                          className="w-10 h-10 rounded-full border border-[rgba(123,229,255,0.14)] object-cover flex-shrink-0"
                         />
                       )}
                       <div>
-                        <div className="text-[13px] font-semibold text-[#e8e8f0]">
+                        <div className="text-[13px] font-semibold text-[var(--text)]">
                           {session?.user?.name}
                         </div>
-                        <div className="text-[11px] text-[#6b6b7d] mt-0.5 break-all">
+                        <div className="text-[11px] text-[var(--text-dim)] mt-0.5 break-all">
                           {session?.user?.email}
                         </div>
                       </div>
                     </div>
-                    <div className="h-px bg-[#2a2a30]" />
+                    <div className="h-px bg-[rgba(123,229,255,0.1)]" />
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
                         signOut({ callbackUrl: "/login" });
                       }}
-                      className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none text-[13px] text-[#9595a8] cursor-pointer text-left transition-all hover:bg-red-400/[0.08] hover:text-red-400"
+                      className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none text-[13px] text-[var(--text-dim)] cursor-pointer text-left transition-all hover:bg-[rgba(251,113,133,0.1)] hover:text-[var(--danger)]"
                     >
                       <span>🚪</span> Keluar
                     </button>
@@ -900,13 +902,13 @@ export default function ChatApp() {
           <div className="flex-1 overflow-y-auto pt-6 pb-2 thin-scroll">
             {!activeChat ? (
               <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
-                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">
+                <div className="w-14 h-14 bg-[rgba(123,229,255,0.08)] border border-[rgba(123,229,255,0.14)] rounded-3xl flex items-center justify-center text-[26px] text-[var(--accent)]">
                   🤖
                 </div>
-                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">
+                <div className="text-[22px] font-semibold text-[var(--text)] tracking-tight">
                   Halo! Apa yang bisa dibantu?
                 </div>
-                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">
+                <div className="text-sm text-[var(--text-dim)] max-w-[280px] leading-relaxed">
                   Mulai percakapan baru atau pilih chat dari sidebar.
                 </div>
                 <div className="grid grid-cols-2 gap-2.5 max-w-[480px] w-full">
@@ -915,13 +917,14 @@ export default function ChatApp() {
                     : suggestions.map((sg) => (
                         <button
                           key={sg.s}
-                          // ✅ FIX: Pakai startChatWithSuggestion — tidak ada race condition
                           onClick={() => startChatWithSuggestion(sg.s)}
                           disabled={isLoading}
-                          className="bg-[#17171a] border border-[#2a2a30] rounded-xl p-3 cursor-pointer text-left transition-all hover:border-violet-500 hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-[rgba(255,255,255,0.04)] border border-[rgba(123,229,255,0.12)] rounded-3xl p-3 cursor-pointer text-left transition-all hover:border-[rgba(123,229,255,0.2)] hover:bg-[rgba(123,229,255,0.1)] disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                          <p className="text-xs text-[#9595a8] m-0">{sg.p}</p>
-                          <span className="text-[11px] text-[#6b6b7d] mt-0.5 block">
+                          <p className="text-xs text-[var(--text-dim)] m-0">
+                            {sg.p}
+                          </p>
+                          <span className="text-[11px] text-[var(--text)] mt-0.5 block">
                             {sg.s}
                           </span>
                         </button>
@@ -930,13 +933,13 @@ export default function ChatApp() {
               </div>
             ) : activeChat.messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center gap-5 px-10 text-center">
-                <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/25 rounded-2xl flex items-center justify-center text-[26px]">
+                <div className="w-14 h-14 bg-[rgba(123,229,255,0.08)] border border-[rgba(123,229,255,0.14)] rounded-3xl flex items-center justify-center text-[26px] text-[var(--accent)]">
                   ✨
                 </div>
-                <div className="text-[22px] font-semibold text-[#e8e8f0] tracking-tight">
+                <div className="text-[22px] font-semibold text-[var(--text)] tracking-tight">
                   Chat baru siap!
                 </div>
-                <div className="text-sm text-[#6b6b7d] max-w-[280px] leading-relaxed">
+                <div className="text-sm text-[var(--text-dim)] max-w-[280px] leading-relaxed">
                   Tulis pesan pertamamu di bawah untuk memulai.
                 </div>
               </div>
@@ -965,8 +968,8 @@ export default function ChatApp() {
 
                       <div className="flex-1 min-w-0">
                         {/* Meta */}
-                        <div className="flex items-center gap-2 mb-1.5 text-[11px] text-[#6b6b7d]">
-                          <span className="font-semibold text-[#9595a8]">
+                        <div className="flex items-center gap-2 mb-1.5 text-[11px] text-[var(--text-dim)]">
+                          <span className="font-semibold text-[var(--text)]">
                             {msg.role === "user" ? "Kamu" : "Asisten"}
                           </span>
                           <span>{formatTime(msg.ts)}</span>
@@ -975,7 +978,7 @@ export default function ChatApp() {
                             <button
                               onClick={() => copy(msg.content, msg.id)}
                               title="Copy pesan"
-                              className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border border-[#2a2a30] bg-[#1e1e22] hover:border-violet-500 hover:text-violet-400 text-[#6b6b7d]"
+                              className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border border-[rgba(123,229,255,0.14)] bg-[rgba(255,255,255,0.05)] hover:border-[rgba(123,229,255,0.24)] hover:text-[var(--accent)] text-[var(--text-dim)]"
                             >
                               {copiedId === msg.id ? "✓ Tersalin" : "⎘ Copy"}
                             </button>
@@ -984,11 +987,11 @@ export default function ChatApp() {
 
                         {/* Bubble */}
                         {msg.role === "user" ? (
-                          <div className="inline-block max-w-full bg-[#1d1b3a] border border-violet-500/30 rounded-[4px_12px_12px_12px] px-3.5 py-2.5 text-sm leading-[1.7] text-[#e8e8f0] whitespace-pre-wrap break-words">
+                          <div className="inline-block max-w-full bg-[rgba(123,229,255,0.12)] border border-[rgba(123,229,255,0.14)] rounded-[14px] px-4 py-3 text-sm leading-[1.7] text-[var(--text)] whitespace-pre-wrap break-words shadow-[0_8px_20px_rgba(0,0,0,0.08)]">
                             {msg.content}
                           </div>
                         ) : (
-                          <div className="text-sm leading-[1.7] text-[#e8e8f0] whitespace-pre-wrap break-words">
+                          <div className="inline-block max-w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] rounded-[14px] px-4 py-3 text-sm leading-[1.7] text-[var(--text)] whitespace-pre-wrap break-words shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
                             {msg.content === "" ? <TypingDot /> : msg.content}
                           </div>
                         )}
@@ -998,11 +1001,11 @@ export default function ChatApp() {
                 ))}
 
                 {isLastMsgAI && !isLoading && (
-                  <div className="max-w-[760px] mx-auto px-6 py-2 flex items-center gap-3">
+                  <div className="max-w-[760px] mx-auto px-5 py-2 flex items-center gap-3">
                     <div className="h-px flex-1 bg-[#2a2a30]" />
                     <button
                       onClick={regenerateLast}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-[#9595a8] border border-[#2a2a30] bg-[#17171a] hover:border-violet-500 hover:text-violet-400 transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[11px] text-[var(--text-dim)] border border-[rgba(123,229,255,0.12)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(123,229,255,0.2)] hover:text-[var(--text)] transition-all"
                       title="Minta jawaban baru"
                     >
                       🔄 Regenerate
@@ -1016,8 +1019,8 @@ export default function ChatApp() {
           </div>
 
           {/* ══ Input area ══ */}
-          <div className="px-6 pt-4 pb-5 border-t border-[#2a2a30] bg-[#0f0f11] flex-shrink-0">
-            <div className="max-w-[760px] mx-auto flex gap-2.5 bg-[#17171a] border border-[#2a2a30] rounded-[14px] px-3 py-2.5 transition-all focus-within:border-violet-500 focus-within:shadow-[0_0_0_3px_rgba(124,106,247,0.18)]">
+          <div className="px-6 pt-4 pb-5 border-t border-[rgba(123,229,255,0.1)] bg-[rgba(6,8,18,0.88)] flex-shrink-0 backdrop-blur-md">
+            <div className="max-w-[760px] mx-auto flex gap-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(123,229,255,0.12)] rounded-[20px] px-3 py-2.5 transition-all focus-within:border-[rgba(123,229,255,0.2)] focus-within:shadow-[0_0_0_3px_rgba(123,229,255,0.12)]">
               <textarea
                 ref={inputRef}
                 rows={1}
@@ -1035,18 +1038,18 @@ export default function ChatApp() {
                     sendMessage();
                   }
                 }}
-                className="flex-1 bg-transparent border-none outline-none text-[#e8e8f0] text-sm leading-relaxed resize-none min-h-[22px] max-h-[160px] py-0.5 placeholder-[#6b6b7d]"
+                className="flex-1 bg-transparent border-none outline-none text-[var(--text)] text-sm leading-relaxed resize-none min-h-[24px] max-h-[160px] py-0.5 placeholder-[var(--text-dim)]"
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
                 title="Kirim"
-                className="w-9 h-9 bg-violet-500 rounded-[9px] text-white text-[15px] flex items-center justify-center self-end flex-shrink-0 border-none transition-all hover:opacity-85 hover:scale-105 disabled:opacity-35 disabled:cursor-not-allowed disabled:scale-100"
+                className="w-10 h-10 bg-[var(--accent)] rounded-2xl text-[var(--bg)] text-[15px] flex items-center justify-center self-end flex-shrink-0 border-none transition-all hover:scale-105 disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 {isLoading ? "⏳" : "➤"}
               </button>
             </div>
-            <div className="max-w-[760px] mx-auto mt-2 text-center text-[11px] text-[#6b6b7d]">
+            <div className="max-w-[760px] mx-auto mt-2 text-center text-[11px] text-[var(--text-dim)]">
               Powered by Groq · llama-3.3-70b-versatile · Free tier
             </div>
           </div>

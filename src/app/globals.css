@@ -1,41 +1,62 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Montserrat:wght@300;400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 :root {
-  --bg: #0a0a0f;
-  --surface: #111118;
-  --surface2: #1a1a24;
-  --border: #2a2a38;
-  --border-bright: #3d3d55;
-  --accent: #5b6af0;
-  --accent-bright: #7b8aff;
-  --accent-glow: rgba(91, 106, 240, 0.3);
-  --text: #e8e8f0;
-  --text-dim: #8888a8;
-  --text-muted: #555570;
-  --user-bg: #1e1e30;
-  --ai-bg: #111118;
+  --bg: #060812;
+  --surface: rgba(14, 21, 36, 0.88);
+  --surface2: rgba(20, 30, 52, 0.9);
+  --border: rgba(102, 219, 255, 0.14);
+  --border-bright: rgba(102, 219, 255, 0.27);
+  --accent: #7be5ff;
+  --accent-bright: #c5fbff;
+  --accent-glow: rgba(123, 229, 255, 0.2);
+  --text: #ecf5ff;
+  --text-dim: #9bb5ca;
+  --text-muted: #6d7f94;
+  --user-bg: rgba(61, 94, 134, 0.18);
+  --ai-bg: rgba(255, 255, 255, 0.06);
   --success: #4ade80;
-  --danger: #f87171;
-  --font-display: "Syne", sans-serif;
+  --danger: #fb7185;
+  --font-display: "Montserrat", sans-serif;
   --font-mono: "DM Mono", monospace;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --radius: 18px;
+  --radius-sm: 10px;
 }
 
-html, body {
-  height: 100%;
-  background: var(--bg);
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+  }
+}
+
+html,
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(123, 229, 255, 0.12),
+      transparent 22%
+    ),
+    var(--bg);
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -59,10 +80,10 @@ html, body {
 
 button {
   cursor: pointer;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
 }
 
 textarea {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   resize: none;
 }
