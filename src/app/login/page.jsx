@@ -42,10 +42,10 @@ export default function LoginPage() {
     }
   }
 
-  const bgColor = isDark ? "#00000": "#ffffff"
+  const bgColor = isDark ? "#000000": "#ffffff"
   const textColor = isDark ? "#e8e8ef" : "#1f2937";
   const borderColor = isDark ? "#2a2a30" : "#e5e7eb";
-  const inputBg = isDark ? "#0000":"#ffffff";
+  const inputBg = isDark ? "#000000":"#ffffff";
 
   return (
     <div
