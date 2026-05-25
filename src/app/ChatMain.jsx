@@ -67,8 +67,12 @@ function ExportMenu({ onExport }) {
                 }}
                 className="w-full flex flex-col px-3 py-2 text-left hover:bg-[var(--surface2)] transition-colors border-none bg-transparent cursor-pointer"
               >
-                <span className="text-[12px] text-[var(--text)]">{f.label}</span>
-                <span className="text-[10px] text-[var(--text-muted)]">{f.desc}</span>
+                <span className="text-[12px] text-[var(--text)]">
+                  {f.label}
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {f.desc}
+                </span>
               </button>
             ))}
           </div>
@@ -214,7 +218,6 @@ export default function ChatMain({
                 >
                   <span>🚪</span> Keluar
                 </button>
-                
               </div>
             </>
           )}
@@ -273,7 +276,11 @@ export default function ChatMain({
                 key={msg.id}
                 className="animate-msg-in max-w-[760px] mx-auto px-6 py-1.5 group"
               >
-                <div className="flex gap-3 items-start">
+                <div
+                  className={`flex gap-3 items-start ${
+                    msg.role === "user" ? "flex-row-reverse justify-end" : ""
+                  }`}
+                >
                   {/* Avatar */}
                   <div
                     className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-sm flex-shrink-0 mt-0.5"
@@ -291,7 +298,7 @@ export default function ChatMain({
 
                   <div className="flex-1 min-w-0">
                     {/* Meta */}
-                    <div className="flex items-center justify-start gap-2 mb-1.5 text-[11px] text-[var(--text-dim)]">
+                    <div className="flex items-center justify-end gap-2 mb-1.5 text-[11px] text-[var(--text-dim)]">
                       <span className="font-semibold text-[var(--text)]">
                         {msg.role === "user" ? "Kamu" : "Asisten"}
                       </span>
