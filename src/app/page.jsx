@@ -4,7 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
-const ChatApp = dynamic(() => import("./ChatApp"), { ssr: false });
+const ChatApp = dynamic(() => import("@/components/Chat/ChatApp"), { ssr: false });
 
 export default function Page() {
   const [mounted, setMounted] = useState(false);
