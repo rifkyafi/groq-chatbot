@@ -291,7 +291,7 @@ export default function ChatMain({
 
                   <div className="flex-1 min-w-0">
                     {/* Meta */}
-                    <div className="flex items-center justify-end gap-2 mb-1.5 text-[11px] text-[var(--text-dim)]">
+                    <div className="flex items-center justify-start gap-2 mb-1.5 text-[11px] text-[var(--text-dim)]">
                       <span className="font-semibold text-[var(--text)]">
                         {msg.role === "user" ? "Kamu" : "Asisten"}
                       </span>

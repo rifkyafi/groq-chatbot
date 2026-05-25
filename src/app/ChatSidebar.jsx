@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { FaRegTrashAlt } from "react-icons/fa";
+import { FaPen } from "react-icons/fa";
+import { RiMessage2Line } from "react-icons/ri";
 
 function formatDate(ts) {
   const d = new Date(ts);
@@ -123,7 +126,7 @@ export default function ChatSidebar({
                   }}
                 >
                   <span className="text-[13px] opacity-70 flex-shrink-0">
-                    💬
+                    <RiMessage2Line />
                   </span>
 
                   {editingId === chat.id ? (
@@ -160,14 +163,14 @@ export default function ChatSidebar({
                         onClick={() => startRename(chat)}
                         className="w-6 h-6 flex items-center justify-center rounded text-xs text-[var(--text-dim)] bg-transparent border-none cursor-pointer transition-all hover:text-[var(--text)] hover:bg-[var(--ai-bg)]"
                       >
-                        ✏️
+                        <FaPen />
                       </button>
                       <button
                         title="Hapus"
                         onClick={() => onDeleteChat(chat.id)}
                         className="w-6 h-6 flex items-center justify-center rounded text-xs text-[var(--text-dim)] bg-transparent border-none cursor-pointer transition-all hover:text-[var(--danger)] hover:bg-[rgba(251,113,133,0.1)]"
                       >
-                        🗑️
+                        <FaRegTrashAlt />
                       </button>
                     </div>
                   )}

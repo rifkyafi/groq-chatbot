@@ -5,6 +5,9 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import logo from "@/lib/images/logo.png";
+import { FaLockOpen } from "react-icons/fa6";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -70,7 +73,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🤖</div>
+          <div className="text-5xl mb-3 flex justify-center"><Image src={logo} alt="" width={100} height={100} /></div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">
             Groq<span style={{ color: "#a78bfa" }}>Chat</span>
           </h1>
@@ -143,7 +146,15 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full py-2.5 rounded-lg bg-violet-500 text-white font-medium transition-all hover:opacity-85 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "⏳ Sedang masuk…" : "🔓 Masuk"}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <span>⏳ Sedang masuk…</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <FaLockOpen className="text-white" /> Masuk
+              </div>
+            )}
           </button>
         </form>
 
